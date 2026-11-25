@@ -1,11 +1,106 @@
 package com.temptech.clinicflow.entity;
 
-// ============================================================
-// OWNER   : Malig-on
-// FEATURE : Book Appointment
-// ============================================================
+import java.time.LocalDate;
+import java.time.LocalTime;
 
-// Add @Entity, @Id and the fields from the ERD. Stays a plain class until then so the app still starts.
-// TODO: write your code here
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+// Owner: Malig-on
+@Entity
+@Table(name = "time_slots")
 public class TimeSlot {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int timeSlotId;
+
+    @ManyToOne
+    @JoinColumn(name = "doctor_id")
+    private Doctor doctor;
+
+    @ManyToOne
+    @JoinColumn(name = "service_id")
+    private ClinicService service;
+
+    private LocalDate slotDate;
+
+    private LocalTime startTime;
+
+    private String status;
+
+    private int capacity;
+
+    private int bookedCount;
+
+    public TimeSlot() {}
+
+    public int getTimeSlotId() {
+        return timeSlotId;
+    }
+
+    public void setTimeSlotId(int timeSlotId) {
+        this.timeSlotId = timeSlotId;
+    }
+
+    public Doctor getDoctor() {
+        return doctor;
+    }
+
+    public void setDoctor(Doctor doctor) {
+        this.doctor = doctor;
+    }
+
+    public ClinicService getService() {
+        return service;
+    }
+
+    public void setService(ClinicService service) {
+        this.service = service;
+    }
+
+    public LocalDate getSlotDate() {
+        return slotDate;
+    }
+
+    public void setSlotDate(LocalDate slotDate) {
+        this.slotDate = slotDate;
+    }
+
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+
+    public int getBookedCount() {
+        return bookedCount;
+    }
+
+    public void setBookedCount(int bookedCount) {
+        this.bookedCount = bookedCount;
+    }
 }

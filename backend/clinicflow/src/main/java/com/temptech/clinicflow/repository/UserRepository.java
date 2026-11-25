@@ -1,11 +1,8 @@
 package com.temptech.clinicflow.repository;
 
-// ============================================================
-// OWNER   : Malig-on
-// FEATURE : Patient Information (use @Table(name="users"), USER is reserved in MySQL)
-// ============================================================
+import org.springframework.data.jpa.repository.JpaRepository;
 
-// Later: extends JpaRepository<User, Long> (after User has @Entity).
-// TODO: write your code here
-public interface UserRepository {
+import com.temptech.clinicflow.entity.User;
+
+public interface UserRepository extends JpaRepository<User, Integer> {
 }

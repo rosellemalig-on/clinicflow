@@ -1,10 +1,21 @@
 package com.temptech.clinicflow.security;
 
-// ============================================================
-// OWNER   : TEAM (shared)
-// FEATURE : Shared (permitAll for now, see earlier message)
-// ============================================================
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 
-// TODO: write your code here
+// For now every request is allowed, so you can test your pages.
+// Add real login rules later.
+@Configuration
 public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.cors(Customizer.withDefaults());
+        http.csrf(csrf -> csrf.disable());
+        http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
 }

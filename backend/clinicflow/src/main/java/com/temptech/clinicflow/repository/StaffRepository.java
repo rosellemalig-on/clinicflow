@@ -1,11 +1,8 @@
 package com.temptech.clinicflow.repository;
 
-// ============================================================
-// OWNER   : Padilla
-// FEATURE : Staff Management
-// ============================================================
+import org.springframework.data.jpa.repository.JpaRepository;
 
-// Later: extends JpaRepository<Staff, Long> (after Staff has @Entity).
-// TODO: write your code here
-public interface StaffRepository {
+import com.temptech.clinicflow.entity.Staff;
+
+public interface StaffRepository extends JpaRepository<Staff, Integer> {
 }

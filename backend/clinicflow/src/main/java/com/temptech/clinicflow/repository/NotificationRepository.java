@@ -1,11 +1,8 @@
 package com.temptech.clinicflow.repository;
 
-// ============================================================
-// OWNER   : Lepon
-// FEATURE : Notifications
-// ============================================================
+import org.springframework.data.jpa.repository.JpaRepository;
 
-// Later: extends JpaRepository<Notification, Long> (after Notification has @Entity).
-// TODO: write your code here
-public interface NotificationRepository {
+import com.temptech.clinicflow.entity.Notification;
+
+public interface NotificationRepository extends JpaRepository<Notification, Integer> {
 }

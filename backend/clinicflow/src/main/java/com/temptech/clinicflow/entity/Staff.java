@@ -1,11 +1,41 @@
 package com.temptech.clinicflow.entity;
 
-// ============================================================
-// OWNER   : Padilla
-// FEATURE : Staff Management
-// ============================================================
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
-// Add @Entity, @Id and the fields from the ERD. Stays a plain class until then so the app still starts.
-// TODO: write your code here
+// Owner: Padilla
+@Entity
+@Table(name = "staff")
 public class Staff {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int staffId;
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public Staff() {}
+
+    public int getStaffId() {
+        return staffId;
+    }
+
+    public void setStaffId(int staffId) {
+        this.staffId = staffId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

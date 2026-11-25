@@ -1,11 +1,8 @@
 package com.temptech.clinicflow.repository;
 
-// ============================================================
-// OWNER   : Padilla
-// FEATURE : Queue Management
-// ============================================================
+import org.springframework.data.jpa.repository.JpaRepository;
 
-// Later: extends JpaRepository<QueueEntry, Long> (after QueueEntry has @Entity).
-// TODO: write your code here
-public interface QueueEntryRepository {
+import com.temptech.clinicflow.entity.QueueEntry;
+
+public interface QueueEntryRepository extends JpaRepository<QueueEntry, Integer> {
 }

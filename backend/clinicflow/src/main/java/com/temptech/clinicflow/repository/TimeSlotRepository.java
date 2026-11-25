@@ -1,11 +1,8 @@
 package com.temptech.clinicflow.repository;
 
-// ============================================================
-// OWNER   : Malig-on
-// FEATURE : Book Appointment
-// ============================================================
+import org.springframework.data.jpa.repository.JpaRepository;
 
-// Later: extends JpaRepository<TimeSlot, Long> (after TimeSlot has @Entity).
-// TODO: write your code here
-public interface TimeSlotRepository {
+import com.temptech.clinicflow.entity.TimeSlot;
+
+public interface TimeSlotRepository extends JpaRepository<TimeSlot, Integer> {
 }
