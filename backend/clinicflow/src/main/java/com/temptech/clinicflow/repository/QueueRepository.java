@@ -1,5 +1,11 @@
-package com.temptech.clinicflow.repository;     //Padilla
+package com.temptech.clinicflow.repository;
 
-public class QueueRepository {
-    
+// ============================================================
+// OWNER   : Padilla
+// FEATURE : Queue Management
+// ============================================================
+
+// Later: extends JpaRepository<Queue, Long> (after Queue has @Entity).
+// TODO: write your code here
+public interface QueueRepository {
 }

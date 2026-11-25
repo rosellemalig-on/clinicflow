@@ -1,5 +1,11 @@
-package com.temptech.clinicflow.repository;     //padilla
+package com.temptech.clinicflow.repository;
 
-public class StaffRepository {
-    
+// ============================================================
+// OWNER   : Padilla
+// FEATURE : Staff Management
+// ============================================================
+
+// Later: extends JpaRepository<Staff, Long> (after Staff has @Entity).
+// TODO: write your code here
+public interface StaffRepository {
 }

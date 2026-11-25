@@ -1,1 +1,9 @@
-//lepon
+// ============================================================
+// OWNER   : Lepon
+// FEATURE : My Queue
+// ============================================================
+
+import api from "./api";
+
+// TODO: write your API calls here, e.g.
+// export const getAll = () => api.get("/...");

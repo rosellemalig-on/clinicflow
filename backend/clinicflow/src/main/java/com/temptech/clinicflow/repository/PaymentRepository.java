@@ -1,5 +1,11 @@
-package com.temptech.clinicflow.repository;      //malig-on
+package com.temptech.clinicflow.repository;
 
-public class PaymentRepository {
-    
+// ============================================================
+// OWNER   : Malig-on
+// FEATURE : Payment & Billing
+// ============================================================
+
+// Later: extends JpaRepository<Payment, Long> (after Payment has @Entity).
+// TODO: write your code here
+public interface PaymentRepository {
 }

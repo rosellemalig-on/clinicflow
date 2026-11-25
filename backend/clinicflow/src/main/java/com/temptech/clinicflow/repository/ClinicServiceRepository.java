@@ -1,5 +1,11 @@
-package com.temptech.clinicflow.repository;     //Padilla
+package com.temptech.clinicflow.repository;
 
-public class ClinicServiceRepository {
-    
+// ============================================================
+// OWNER   : Padilla
+// FEATURE : Service & Doctor Management
+// ============================================================
+
+// Later: extends JpaRepository<ClinicService, Long> (after ClinicService has @Entity).
+// TODO: write your code here
+public interface ClinicServiceRepository {
 }

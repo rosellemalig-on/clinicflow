@@ -1,5 +1,11 @@
-package com.temptech.clinicflow.repository;     //lepon
+package com.temptech.clinicflow.repository;
 
-public class VisitHistoryRepository {
-    
+// ============================================================
+// OWNER   : Lepon
+// FEATURE : Appointment History
+// ============================================================
+
+// Later: extends JpaRepository<VisitHistory, Long> (after VisitHistory has @Entity).
+// TODO: write your code here
+public interface VisitHistoryRepository {
 }

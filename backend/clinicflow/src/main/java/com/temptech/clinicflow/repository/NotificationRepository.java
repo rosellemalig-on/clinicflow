@@ -1,5 +1,11 @@
-package com.temptech.clinicflow.repository;     //lepon
+package com.temptech.clinicflow.repository;
 
-public class NotificationRepository {
-    
+// ============================================================
+// OWNER   : Lepon
+// FEATURE : Notifications
+// ============================================================
+
+// Later: extends JpaRepository<Notification, Long> (after Notification has @Entity).
+// TODO: write your code here
+public interface NotificationRepository {
 }

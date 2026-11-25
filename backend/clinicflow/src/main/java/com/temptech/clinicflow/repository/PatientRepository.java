@@ -1,5 +1,11 @@
-package com.temptech.clinicflow.repository;       //malig-on
+package com.temptech.clinicflow.repository;
 
-public class PatientRepository {
-    
+// ============================================================
+// OWNER   : Malig-on
+// FEATURE : Patient Information
+// ============================================================
+
+// Later: extends JpaRepository<Patient, Long> (after Patient has @Entity).
+// TODO: write your code here
+public interface PatientRepository {
 }
