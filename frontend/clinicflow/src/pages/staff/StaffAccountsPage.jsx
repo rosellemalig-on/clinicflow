@@ -76,48 +76,81 @@ export default function StaffAccountsPage() {
       )}
 
       <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs">
-        <h2 className="text-base font-bold text-[#062b26]">Add staff account</h2>
-        <form
-          onSubmit={handleSubmit}
-          className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.1fr_1.1fr_1fr_1fr_auto]"
-        >
-          <input
-            placeholder="Full name"
-            value={form.name}
-            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            className="rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email address"
-            value={form.email}
-            onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-            className="rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
-            required
-          />
-          <input
-            placeholder="Contact number"
-            value={form.contactNumber}
-            onChange={(e) => setForm((p) => ({ ...p, contactNumber: e.target.value }))}
-            className="rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
-          />
-          <input
-            type="password"
-            minLength={8}
-            placeholder="Password (min 8 chars)"
-            value={form.password}
-            onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-            className="rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
-            required
-          />
-          <button
-            type="submit"
-            disabled={submitting}
-            className="primary-button px-5 py-2.5"
-          >
-            {submitting ? "Adding…" : "Add staff"}
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base font-bold text-[#062b26]">Add staff account</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              New staff members can immediately sign in through the Staff Portal.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Full name
+              </span>
+              <input
+                placeholder="e.g., Elena Reyes"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                className="w-full min-w-0 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
+                required
+              />
+            </label>
+
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Email address
+              </span>
+              <input
+                type="email"
+                placeholder="staff@clinicflow.ph"
+                value={form.email}
+                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                className="w-full min-w-0 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
+                required
+              />
+            </label>
+
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Contact number
+              </span>
+              <input
+                placeholder="+63 917 555 0100"
+                value={form.contactNumber}
+                onChange={(e) => setForm((p) => ({ ...p, contactNumber: e.target.value }))}
+                className="w-full min-w-0 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
+              />
+            </label>
+
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Temporary password
+              </span>
+              <input
+                type="password"
+                minLength={8}
+                placeholder="At least 8 characters"
+                value={form.password}
+                onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                className="w-full min-w-0 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
+                required
+              />
+            </label>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="primary-button px-5 py-2.5 disabled:opacity-60"
+            >
+              {submitting ? "Adding…" : "Add staff account"}
+            </button>
+          </div>
         </form>
       </section>
 

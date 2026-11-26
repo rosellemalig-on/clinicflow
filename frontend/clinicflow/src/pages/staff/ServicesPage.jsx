@@ -3,178 +3,145 @@
 // FEATURE : Feature 7 Services
 // ============================================================
 
-import { useState } from 'react';
-import { useClinicFlowStore } from '../../data/clinicFlowStore';
+import { useState } from "react";
+import { useClinicFlowStore } from "@/data/clinicFlowStore";
 
 export default function ServicesPage() {
-  const { state, addService, updateService, addDoctor, updateDoctor } = useClinicFlowStore();
+  const { state, addService, updateService } = useClinicFlowStore();
+  const [newService, setNewService] = useState({
+    name: "",
+    fee: "",
+    durationMin: "20",
+  });
 
-  const [newService, setNewService] = useState({ name: '', fee: '', durationMin: '20' });
-  const [newDoctor, setNewDoctor] = useState({ name: '', specialty: '', schedule: 'Mon–Fri, 9:00 AM – 4:00 PM' });
-
-  const handleAddService = (e) => {
+  const handleAddService = async (e) => {
     e.preventDefault();
     if (!newService.name.trim()) return;
-    addService(newService);
-    setNewService({ name: '', fee: '', durationMin: '20' });
-  };
-
-  const handleAddDoctor = (e) => {
-    e.preventDefault();
-    if (!newDoctor.name.trim() || !newDoctor.specialty.trim()) return;
-    addDoctor(newDoctor);
-    setNewDoctor({ name: '', specialty: '', schedule: 'Mon–Fri, 9:00 AM – 4:00 PM' });
+    await addService(newService);
+    setNewService({ name: "", fee: "", durationMin: "20" });
   };
 
   return (
-    <div style={{ maxWidth: 1040, margin: '0 auto', padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-      <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: '#0F766E', margin: 0 }}>
-        STAFF ADMINISTRATION
+    <div className="mx-auto max-w-6xl">
+      <p className="eyebrow">Staff administration</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#062b26]">
+        Clinic services
+      </h1>
+      <p className="mt-1.5 text-sm text-slate-500">
+        Manage offered clinic services, consultation fees, durations, and active availability.
       </p>
-      <h1 style={{ margin: '4px 0 20px', color: '#062B26', fontSize: 28 }}>Service & Doctor Management</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(440px, 100%), 1fr))', gap: 20 }}>
-        {/* Services Panel */}
-        <section style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }}>
-          <h2 style={{ margin: '0 0 12px', fontSize: 18, color: '#062B26' }}>Clinic Services</h2>
-          <form onSubmit={handleAddService} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            <input
-              placeholder="Service name"
-              value={newService.name}
-              onChange={(e) => setNewService((p) => ({ ...p, name: e.target.value }))}
-              style={{ flex: '1 1 160px', padding: 8, borderRadius: 8, border: '1px solid #D1D5DB' }}
-            />
-            <input
-              type="number"
-              min="0"
-              placeholder="Fee (₱)"
-              value={newService.fee}
-              onChange={(e) => setNewService((p) => ({ ...p, fee: e.target.value }))}
-              style={{ width: 100, padding: 8, borderRadius: 8, border: '1px solid #D1D5DB' }}
-            />
-            <button
-              type="submit"
-              style={{ background: '#0F766E', color: '#FFF', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              Add Service
-            </button>
-          </form>
+      <section className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs">
+        <h2 className="text-base font-bold text-[#062b26]">Add service</h2>
+        <form onSubmit={handleAddService} className="mt-4 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Service name
+              </span>
+              <input
+                placeholder="e.g., General Consultation"
+                value={newService.name}
+                onChange={(e) => setNewService((p) => ({ ...p, name: e.target.value }))}
+                className="w-full min-w-0 rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none focus:border-teal-600"
+                required
+              />
+            </label>
 
-          <div style={{ display: 'grid', gap: 10 }}>
-            {state.services.map((svc) => (
-              <div
-                key={svc.id}
-                style={{
-                  border: '1px solid #E5E7EB',
-                  borderRadius: 10,
-                  padding: 12,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700, color: '#062B26' }}>{svc.name}</div>
-                  <div style={{ fontSize: 12, color: '#4B5563' }}>
-                    ₱{svc.fee} · {svc.durationMin} mins · {svc.active ? 'Active' : 'Inactive'}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    type="button"
-                    onClick={() => updateService(svc.id, { fee: svc.fee + 50 })}
-                    style={{ padding: '5px 9px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#F9FAFB', cursor: 'pointer', fontSize: 12 }}
-                  >
-                    +₱50
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateService(svc.id, { active: !svc.active })}
-                    style={{ padding: '5px 9px', borderRadius: 6, border: '1px solid #D1D5DB', background: '#FFFFFF', cursor: 'pointer', fontSize: 12 }}
-                  >
-                    {svc.active ? 'Disable' : 'Enable'}
-                  </button>
-                </div>
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Consultation fee
+              </span>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-sm font-semibold text-slate-400">
+                  ₱
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="500"
+                  value={newService.fee}
+                  onChange={(e) => setNewService((p) => ({ ...p, fee: e.target.value }))}
+                  className="w-full min-w-0 rounded-xl border border-slate-300 py-2.5 pl-8 pr-3.5 text-sm outline-none focus:border-teal-600"
+                  required
+                />
               </div>
-            ))}
-          </div>
-        </section>
+            </label>
 
-        {/* Doctors Panel */}
-        <section style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16, padding: 20 }}>
-          <h2 style={{ margin: '0 0 12px', fontSize: 18, color: '#062B26' }}>Doctors & Schedules</h2>
-          <form onSubmit={handleAddDoctor} style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <input
-                placeholder="Doctor name (e.g., Dr. Ana Cruz, MD)"
-                value={newDoctor.name}
-                onChange={(e) => setNewDoctor((p) => ({ ...p, name: e.target.value }))}
-                style={{ flex: '1 1 180px', padding: 8, borderRadius: 8, border: '1px solid #D1D5DB' }}
-              />
-              <input
-                placeholder="Specialty"
-                value={newDoctor.specialty}
-                onChange={(e) => setNewDoctor((p) => ({ ...p, specialty: e.target.value }))}
-                style={{ flex: '1 1 140px', padding: 8, borderRadius: 8, border: '1px solid #D1D5DB' }}
-              />
+            <label className="block min-w-0">
+              <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                Duration
+              </span>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="5"
+                  step="5"
+                  placeholder="20"
+                  value={newService.durationMin}
+                  onChange={(e) => setNewService((p) => ({ ...p, durationMin: e.target.value }))}
+                  className="w-full min-w-0 rounded-xl border border-slate-300 py-2.5 pl-3.5 pr-16 text-sm outline-none focus:border-teal-600"
+                  required
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-xs font-semibold text-slate-400">
+                  minutes
+                </span>
+              </div>
+            </label>
+          </div>
+
+          <div className="flex justify-end">
+            <button type="submit" className="primary-button whitespace-nowrap px-5 py-2.5">
+              Add service
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        {state.services.map((svc) => (
+          <div
+            key={svc.id}
+            className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs"
+          >
+            <div>
+              <p className="font-bold text-[#062b26]">{svc.name}</p>
+              <p className="mt-1 text-xs font-semibold text-teal-700">
+                ₱{Number(svc.fee || 0).toLocaleString()} · {svc.durationMin} mins
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {svc.active ? "Available for patient booking" : "Hidden from patient booking"}
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                placeholder="Available schedule"
-                value={newDoctor.schedule}
-                onChange={(e) => setNewDoctor((p) => ({ ...p, schedule: e.target.value }))}
-                style={{ flex: 1, padding: 8, borderRadius: 8, border: '1px solid #D1D5DB' }}
-              />
+
+            <div className="flex shrink-0 items-center gap-2">
               <button
-                type="submit"
-                style={{ background: '#062B26', color: '#FFF', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 600, cursor: 'pointer' }}
+                type="button"
+                onClick={() => updateService(svc.id, { fee: svc.fee + 50 })}
+                className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-600 hover:text-teal-800"
               >
-                Add Doctor
+                +₱50
+              </button>
+              <button
+                type="button"
+                onClick={() => updateService(svc.id, { active: !svc.active })}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                  svc.active
+                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                    : "bg-red-100 text-red-800 hover:bg-red-200"
+                }`}
+              >
+                {svc.active ? "Active" : "Inactive"}
               </button>
             </div>
-          </form>
-
-          <div style={{ display: 'grid', gap: 10 }}>
-            {state.doctors.map((doc) => (
-              <div
-                key={doc.id}
-                style={{
-                  border: '1px solid #E5E7EB',
-                  borderRadius: 10,
-                  padding: 12,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700, color: '#062B26' }}>{doc.name}</div>
-                  <div style={{ fontSize: 12, color: '#4B5563' }}>
-                    {doc.specialty} · {doc.schedule}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => updateDoctor(doc.id, { available: !doc.available })}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: 999,
-                    border: 'none',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    background: doc.available ? '#D1FAE5' : '#FEE2E2',
-                    color: doc.available ? '#065F46' : '#991B1B',
-                  }}
-                >
-                  {doc.available ? 'Available' : 'Off Duty'}
-                </button>
-              </div>
-            ))}
           </div>
-        </section>
+        ))}
+        {state.services.length === 0 && (
+          <div className="col-span-full rounded-2xl border border-slate-200/80 bg-white py-10 text-center text-sm text-slate-400">
+            No clinic services configured yet.
+          </div>
+        )}
       </div>
     </div>
   );
