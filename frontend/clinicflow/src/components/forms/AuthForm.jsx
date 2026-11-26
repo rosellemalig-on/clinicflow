@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
+const AUTH_INPUT_CLASS =
+  "mt-1.5 block w-full rounded-xl border border-teal-200/85 bg-teal-50/35 px-4 py-2.5 text-sm font-medium text-[#062b26] outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-600/20";
+
 export function AuthForm({ mode = "login", role = "patient" }) {
   const { login, register, registerStaff } = useAuth();
   const navigate = useNavigate();
@@ -53,17 +56,17 @@ export function AuthForm({ mode = "login", role = "patient" }) {
   }
 
   return (
-    <form className="mt-7 space-y-4" onSubmit={submit}>
+    <form className="mt-6 space-y-4" onSubmit={submit}>
       {registerMode && (
-        <label className="field-label">
+        <label className="block text-xs font-semibold text-[#062b26]">
           Full name
-          <input className="field-input" name="name" placeholder="Juan Dela Cruz" required />
+          <input className={AUTH_INPUT_CLASS} name="name" placeholder="Juan Dela Cruz" required />
         </label>
       )}
-      <label className="field-label">
+      <label className="block text-xs font-semibold text-[#062b26]">
         Email address
         <input
-          className="field-input"
+          className={AUTH_INPUT_CLASS}
           name="email"
           type="email"
           placeholder={staffRole ? "staff@clinicflow.ph" : "you@example.com"}
@@ -71,10 +74,10 @@ export function AuthForm({ mode = "login", role = "patient" }) {
         />
       </label>
       {registerMode && (
-        <label className="field-label">
+        <label className="block text-xs font-semibold text-[#062b26]">
           Contact number
           <input
-            className="field-input"
+            className={AUTH_INPUT_CLASS}
             name="contactNumber"
             placeholder="+63 912 345 6789"
             required
@@ -82,20 +85,20 @@ export function AuthForm({ mode = "login", role = "patient" }) {
         </label>
       )}
       {registerMode && staffRole && (
-        <label className="field-label">
+        <label className="block text-xs font-semibold text-[#062b26]">
           Clinic staff access code
           <input
-            className="field-input"
+            className="mt-1.5 block w-full rounded-xl border border-amber-300/90 bg-amber-50/45 px-4 py-2.5 text-sm font-medium text-[#062b26] outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20"
             name="accessCode"
             placeholder="Enter clinic invite code"
             required
           />
         </label>
       )}
-      <label className="field-label">
+      <label className="block text-xs font-semibold text-[#062b26]">
         Password
         <input
-          className="field-input"
+          className={AUTH_INPUT_CLASS}
           name="password"
           type="password"
           minLength="8"
@@ -104,10 +107,10 @@ export function AuthForm({ mode = "login", role = "patient" }) {
         />
       </label>
       {registerMode && (
-        <label className="field-label">
+        <label className="block text-xs font-semibold text-[#062b26]">
           Confirm password
           <input
-            className="field-input"
+            className={AUTH_INPUT_CLASS}
             name="confirmPassword"
             type="password"
             minLength="8"
@@ -117,11 +120,14 @@ export function AuthForm({ mode = "login", role = "patient" }) {
         </label>
       )}
       {message && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
           {message}
         </p>
       )}
-      <button className="primary-button mt-2 w-full" disabled={pending}>
+      <button
+        className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#052622] to-teal-800 px-5 py-3 text-sm font-bold text-white shadow-md shadow-teal-950/15 transition hover:from-[#073630] hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={pending}
+      >
         {pending
           ? "Please wait…"
           : registerMode
@@ -132,7 +138,7 @@ export function AuthForm({ mode = "login", role = "patient" }) {
               ? "Sign in as staff"
               : "Sign in"}
       </button>
-      <div className="space-y-1.5 pt-1 text-center text-sm text-slate-500">
+      <div className="space-y-1.5 border-t border-teal-100 pt-4 text-center text-sm text-slate-500">
         {registerMode ? (
           <p>
             Already registered?{" "}
@@ -144,38 +150,22 @@ export function AuthForm({ mode = "login", role = "patient" }) {
             </Link>
           </p>
         ) : staffRole ? (
-          <>
-            <p>
-              New clinic staff?{" "}
-              <Link
-                className="font-semibold text-teal-700 hover:text-teal-800"
-                to="/staff-register"
-              >
-                Register with access code
-              </Link>
-            </p>
-            <p>
-              Need patient access?{" "}
-              <Link className="font-semibold text-teal-700 hover:text-teal-800" to="/login">
-                Patient sign in
-              </Link>
-            </p>
-          </>
+          <p>
+            New clinic staff?{" "}
+            <Link
+              className="font-semibold text-teal-700 hover:text-teal-800"
+              to="/staff-register"
+            >
+              Register with access code
+            </Link>
+          </p>
         ) : (
-          <>
-            <p>
-              New to ClinicFlow?{" "}
-              <Link className="font-semibold text-teal-700 hover:text-teal-800" to="/register">
-                Create an account
-              </Link>
-            </p>
-            <p>
-              Clinic staff?{" "}
-              <Link className="font-semibold text-teal-700 hover:text-teal-800" to="/staff-login">
-                Staff sign in
-              </Link>
-            </p>
-          </>
+          <p>
+            New to ClinicFlow?{" "}
+            <Link className="font-semibold text-teal-700 hover:text-teal-800" to="/register">
+              Create an account
+            </Link>
+          </p>
         )}
       </div>
     </form>
