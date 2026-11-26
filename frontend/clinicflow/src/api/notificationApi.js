@@ -5,5 +5,19 @@
 
 import api from "./api";
 
-// TODO: write your API calls here, e.g.
-// export const getAll = () => api.get("/...");
+export const getNotifications = (patientId) =>
+  api.get(
+    patientId != null
+      ? `/notifications?patientId=${encodeURIComponent(patientId)}`
+      : "/notifications",
+  );
+
+export const markNotificationRead = (notificationId) =>
+  api.patch(`/notifications/${notificationId}/read`);
+
+export const markAllNotificationsRead = (patientId) =>
+  api.patch(
+    patientId != null
+      ? `/notifications/read-all?patientId=${encodeURIComponent(patientId)}`
+      : "/notifications/read-all",
+  );

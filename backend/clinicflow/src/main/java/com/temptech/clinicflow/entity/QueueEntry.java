@@ -17,14 +17,14 @@ public class QueueEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int queueEntryId;
+    private Integer queueEntryId;
 
     @ManyToOne
-    @JoinColumn(name = "queue_id")
+    @JoinColumn(name = "queue_id", nullable = false)
     private Queue queue;
 
     @ManyToOne
-    @JoinColumn(name = "appointment_id")
+    @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
 
     private String queueNumber;
@@ -37,11 +37,11 @@ public class QueueEntry {
 
     public QueueEntry() {}
 
-    public int getQueueEntryId() {
+    public Integer getQueueEntryId() {
         return queueEntryId;
     }
 
-    public void setQueueEntryId(int queueEntryId) {
+    public void setQueueEntryId(Integer queueEntryId) {
         this.queueEntryId = queueEntryId;
     }
 

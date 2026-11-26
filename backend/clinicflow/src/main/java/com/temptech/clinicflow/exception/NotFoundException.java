@@ -5,6 +5,9 @@ package com.temptech.clinicflow.exception;
 // FEATURE : Shared
 // ============================================================
 
-// TODO: write your code here
-public class NotFoundException {
+public class NotFoundException extends RuntimeException {
+
+    public NotFoundException(String message) {
+        super(message);
+    }
 }

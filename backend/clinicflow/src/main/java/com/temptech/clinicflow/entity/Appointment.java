@@ -16,15 +16,23 @@ public class Appointment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int appointmentId;
+    private Integer appointmentId;
 
     @ManyToOne
-    @JoinColumn(name = "patient_id")
+    @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
     @ManyToOne
-    @JoinColumn(name = "slot_id")
+    @JoinColumn(name = "slot_id", nullable = false)
     private TimeSlot slot;
+
+    @ManyToOne
+    @JoinColumn(name = "service_id")
+    private ClinicService service;
+
+    @ManyToOne
+    @JoinColumn(name = "doctor_id")
+    private Doctor doctor;
 
     @ManyToOne
     @JoinColumn(name = "approved_by")
@@ -37,11 +45,11 @@ public class Appointment {
 
     public Appointment() {}
 
-    public int getAppointmentId() {
+    public Integer getAppointmentId() {
         return appointmentId;
     }
 
-    public void setAppointmentId(int appointmentId) {
+    public void setAppointmentId(Integer appointmentId) {
         this.appointmentId = appointmentId;
     }
 
@@ -59,6 +67,36 @@ public class Appointment {
 
     public void setSlot(TimeSlot slot) {
         this.slot = slot;
+    }
+
+    public ClinicService getService() {
+        return service;
+    }
+
+    public void setService(ClinicService service) {
+        this.service = service;
+    }
+
+    public Doctor getDoctor() {
+        return doctor;
+    }
+
+    public void setDoctor(Doctor doctor) {
+        this.doctor = doctor;
+    }
+
+    public ClinicService getResolvedService() {
+        if (service != null) {
+            return service;
+        }
+        return slot != null ? slot.getService() : null;
+    }
+
+    public Doctor getResolvedDoctor() {
+        if (doctor != null) {
+            return doctor;
+        }
+        return slot != null ? slot.getDoctor() : null;
     }
 
     public Staff getApprovedBy() {

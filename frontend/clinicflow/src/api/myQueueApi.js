@@ -5,5 +5,9 @@
 
 import api from "./api";
 
-// TODO: write your API calls here, e.g.
-// export const getAll = () => api.get("/...");
+export const getMyQueue = (patientId) =>
+  api.get(
+    patientId != null
+      ? `/patient/queue?patientId=${encodeURIComponent(patientId)}`
+      : "/patient/queue",
+  );

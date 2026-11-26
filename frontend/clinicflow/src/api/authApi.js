@@ -5,5 +5,6 @@
 
 import api from "./api";
 
-// TODO: write your API calls here, e.g.
-// export const getAll = () => api.get("/...");
+export const login = (payload) => api.post("/auth/login", payload);
+export const register = (payload) => api.post("/auth/register", payload);
+export const registerStaff = (payload) => api.post("/auth/register-staff", payload);

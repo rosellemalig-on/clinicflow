@@ -15,23 +15,23 @@ public class DoctorClinicService {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int doctorClinicServiceId;
+    private Integer doctorClinicServiceId;
 
     @ManyToOne
-    @JoinColumn(name = "doctor_id")
+    @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
     @ManyToOne
-    @JoinColumn(name = "service_id")
+    @JoinColumn(name = "service_id", nullable = false)
     private ClinicService service;
 
     public DoctorClinicService() {}
 
-    public int getDoctorClinicServiceId() {
+    public Integer getDoctorClinicServiceId() {
         return doctorClinicServiceId;
     }
 
-    public void setDoctorClinicServiceId(int doctorClinicServiceId) {
+    public void setDoctorClinicServiceId(Integer doctorClinicServiceId) {
         this.doctorClinicServiceId = doctorClinicServiceId;
     }
 

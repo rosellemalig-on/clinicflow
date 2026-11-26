@@ -5,6 +5,9 @@ package com.temptech.clinicflow.exception;
 // FEATURE : Book Appointment
 // ============================================================
 
-// TODO: write your code here
-public class SlotFullException {
+public class SlotFullException extends RuntimeException {
+
+    public SlotFullException(String message) {
+        super(message);
+    }
 }

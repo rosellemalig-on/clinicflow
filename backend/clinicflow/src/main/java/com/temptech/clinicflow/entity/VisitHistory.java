@@ -17,10 +17,10 @@ public class VisitHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int visitHistoryId;
+    private Integer visitHistoryId;
 
     @ManyToOne
-    @JoinColumn(name = "patient_id")
+    @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
     @ManyToOne
@@ -33,11 +33,11 @@ public class VisitHistory {
 
     public VisitHistory() {}
 
-    public int getVisitHistoryId() {
+    public Integer getVisitHistoryId() {
         return visitHistoryId;
     }
 
-    public void setVisitHistoryId(int visitHistoryId) {
+    public void setVisitHistoryId(Integer visitHistoryId) {
         this.visitHistoryId = visitHistoryId;
     }
 

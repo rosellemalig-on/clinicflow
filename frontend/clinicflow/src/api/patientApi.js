@@ -5,5 +5,14 @@
 
 import api from "./api";
 
-// TODO: write your API calls here, e.g.
-// export const getAll = () => api.get("/...");
+export const getPatientProfile = (patientId) =>
+  api.get(
+    patientId != null
+      ? `/patients/profile?patientId=${encodeURIComponent(patientId)}`
+      : "/patients/profile",
+  );
+
+export const updatePatientProfile = (patientId, payload) =>
+  api.put(`/patients/${patientId}`, payload);
+
+export const getStaffPatients = () => api.get("/staff/patients");
