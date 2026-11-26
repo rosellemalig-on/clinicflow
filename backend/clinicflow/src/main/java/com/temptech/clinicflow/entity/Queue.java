@@ -2,6 +2,7 @@ package com.temptech.clinicflow.entity;
 
 import java.time.LocalDate;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,23 +18,24 @@ public class Queue {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int queueId;
+    private Integer queueId;
 
     @ManyToOne
     @JoinColumn(name = "staff_id")
     private Staff staff;
 
+    @Column(unique = true, nullable = false)
     private LocalDate queueDate;
 
     private int nowServing;
 
     public Queue() {}
 
-    public int getQueueId() {
+    public Integer getQueueId() {
         return queueId;
     }
 
-    public void setQueueId(int queueId) {
+    public void setQueueId(Integer queueId) {
         this.queueId = queueId;
     }
 

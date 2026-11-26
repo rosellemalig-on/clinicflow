@@ -18,15 +18,17 @@ public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int notificationId;
+    private Integer notificationId;
 
     @ManyToOne
-    @JoinColumn(name = "patient_id")
+    @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
     @ManyToOne
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
+
+    private String title;
 
     @Column(length = 500)
     private String message;
@@ -35,16 +37,16 @@ public class Notification {
 
     private LocalDateTime sentAt;
 
-    @Column(name = "is_read")
+    @Column(name = "is_read", nullable = false)
     private boolean read;
 
     public Notification() {}
 
-    public int getNotificationId() {
+    public Integer getNotificationId() {
         return notificationId;
     }
 
-    public void setNotificationId(int notificationId) {
+    public void setNotificationId(Integer notificationId) {
         this.notificationId = notificationId;
     }
 
@@ -62,6 +64,14 @@ public class Notification {
 
     public void setAppointment(Appointment appointment) {
         this.appointment = appointment;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getMessage() {

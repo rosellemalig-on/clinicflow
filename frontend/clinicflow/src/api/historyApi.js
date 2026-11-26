@@ -5,5 +5,5 @@
 
 import api from "./api";
 
-// TODO: write your API calls here, e.g.
-// export const getAll = () => api.get("/...");
+export const getVisitHistory = (patientId) =>
+  api.get(patientId != null ? `/history?patientId=${encodeURIComponent(patientId)}` : "/history");

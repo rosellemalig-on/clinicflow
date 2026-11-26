@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 // Owner: Malig-on
 @Entity
@@ -18,14 +19,14 @@ public class TimeSlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int timeSlotId;
+    private Integer timeSlotId;
 
     @ManyToOne
-    @JoinColumn(name = "doctor_id")
+    @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
     @ManyToOne
-    @JoinColumn(name = "service_id")
+    @JoinColumn(name = "service_id", nullable = false)
     private ClinicService service;
 
     private LocalDate slotDate;
@@ -38,13 +39,16 @@ public class TimeSlot {
 
     private int bookedCount;
 
+    @Version
+    private Integer version;
+
     public TimeSlot() {}
 
-    public int getTimeSlotId() {
+    public Integer getTimeSlotId() {
         return timeSlotId;
     }
 
-    public void setTimeSlotId(int timeSlotId) {
+    public void setTimeSlotId(Integer timeSlotId) {
         this.timeSlotId = timeSlotId;
     }
 
@@ -102,5 +106,13 @@ public class TimeSlot {
 
     public void setBookedCount(int bookedCount) {
         this.bookedCount = bookedCount;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

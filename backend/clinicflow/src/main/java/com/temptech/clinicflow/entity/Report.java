@@ -17,7 +17,7 @@ public class Report {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int reportId;
+    private Integer reportId;
 
     @ManyToOne
     @JoinColumn(name = "staff_id")
@@ -33,11 +33,11 @@ public class Report {
 
     public Report() {}
 
-    public int getReportId() {
+    public Integer getReportId() {
         return reportId;
     }
 
-    public void setReportId(int reportId) {
+    public void setReportId(Integer reportId) {
         this.reportId = reportId;
     }
 

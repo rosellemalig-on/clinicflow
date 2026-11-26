@@ -1,7 +1,9 @@
 package com.temptech.clinicflow.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,13 +19,14 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int paymentId;
+    private Integer paymentId;
 
     @ManyToOne
-    @JoinColumn(name = "appointment_id")
+    @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
 
-    private double amount;
+    @Column(precision = 10, scale = 2, nullable = false)
+    private BigDecimal amount = BigDecimal.ZERO;
 
     private String method;
 
@@ -33,11 +36,11 @@ public class Payment {
 
     public Payment() {}
 
-    public int getPaymentId() {
+    public Integer getPaymentId() {
         return paymentId;
     }
 
-    public void setPaymentId(int paymentId) {
+    public void setPaymentId(Integer paymentId) {
         this.paymentId = paymentId;
     }
 
@@ -49,11 +52,11 @@ public class Payment {
         this.appointment = appointment;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
