@@ -6,9 +6,8 @@ export const patientNavigation = [
   ["dashboard", "Dashboard"],
   ["profile", "My profile"],
   ["book", "Book appointment"],
-  ["queue", "My queue"],
+  ["queue", "Queue & history"],
   ["notifications", "Notifications"],
-  ["history", "Appointment history"],
   ["billing", "Payment & billing"],
 ];
 
@@ -16,8 +15,7 @@ export const staffNavigation = [
   ["dashboard", "Dashboard"],
   ["patients", "Patient management"],
   ["appointments", "Appointments"],
-  ["services", "Services"],
-  ["doctors", "Doctors"],
+  ["services", "Services & doctors"],
   ["queue", "Queue management"],
   ["reports", "Reports & analytics"],
   ["accounts", "Staff accounts"],

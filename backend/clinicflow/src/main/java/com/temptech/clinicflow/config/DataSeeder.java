@@ -175,12 +175,12 @@ public class DataSeeder implements CommandLineRunner {
         TimeSlot pastSlot2 = createSlot(drReyes, dental, LocalDate.of(2026, 10, 28), LocalTime.of(14, 0), 2, 1);
         Appointment pastKaina2 = createAppointment(kaina, pastSlot2, staff, "Completed");
 
-        createPayment(aptKaina, general.getFee(), "GCash", "Paid");
-        createPayment(pastKaina1, lab.getFee(), "Cash at Clinic", "Paid");
-        createPayment(pastKaina2, dental.getFee(), "Card", "Paid");
-        createPayment(aptLiam, general.getFee(), "GCash", "Paid");
-        createPayment(aptSofia, lab.getFee(), "Maya", "Paid");
-        createPayment(aptNoah, general.getFee(), "Cash at Clinic", "Pending");
+        createPayment(aptKaina, general.getFee(), "GCash", "Paid", "GC-20261126-0142");
+        createPayment(pastKaina1, lab.getFee(), "Cash at Clinic", "Paid", "CASH-20261112-001");
+        createPayment(pastKaina2, dental.getFee(), "Card", "Paid", "CD-20261028-0199");
+        createPayment(aptLiam, general.getFee(), "GCash", "Paid", "GC-20261126-0101");
+        createPayment(aptSofia, lab.getFee(), "Maya", "Paid", "MY-20261126-0102");
+        createPayment(aptNoah, general.getFee(), "Cash at Clinic", "Pending", null);
 
         // 7. Seed Daily Queue & Queue Entries
         Queue queue = new Queue();
@@ -303,11 +303,12 @@ public class DataSeeder implements CommandLineRunner {
         return appointmentRepository.save(a);
     }
 
-    private void createPayment(Appointment apt, BigDecimal amount, String method, String status) {
+    private void createPayment(Appointment apt, BigDecimal amount, String method, String status, String referenceNumber) {
         Payment p = new Payment();
         p.setAppointment(apt);
         p.setAmount(amount);
         p.setMethod(method);
+        p.setReferenceNumber(referenceNumber);
         p.setStatus(status);
         if ("Paid".equals(status)) {
             p.setPaidAt(LocalDateTime.now());

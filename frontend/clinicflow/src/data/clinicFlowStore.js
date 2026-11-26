@@ -11,6 +11,7 @@ import * as reportApi from '@/api/reportApi';
 import * as serviceApi from '@/api/serviceApi';
 import * as staffApi from '@/api/staffApi';
 import { authService } from '@/services/auth.service';
+import { playNotificationSound } from '@/utils/notificationSound';
 
 const DEFAULT_DATE = '2026-11-26';
 
@@ -72,6 +73,8 @@ const listeners = new Set();
 let initialized = false;
 let activeDate = DEFAULT_DATE;
 let refreshInFlight = false;
+let notificationsHydratedForKey = null;
+const seenNotificationIds = new Set();
 
 function emitChange() {
   listeners.forEach((listener) => listener());
@@ -127,6 +130,8 @@ export async function loadSlotsForDate(date) {
 export async function refreshClinicFlowStore(dateOverride, { silent = false } = {}) {
   const session = getActiveSession();
   if (!session) {
+    notificationsHydratedForKey = null;
+    seenNotificationIds.clear();
     updateStore(INITIAL_STATE);
     return;
   }
@@ -138,6 +143,7 @@ export async function refreshClinicFlowStore(dateOverride, { silent = false } = 
   activeDate = targetDate;
   const isStaff = session.role === 'staff';
   const patientId = getScopedPatientId(session);
+  const sessionKey = `${session.role}:${session.userId ?? session.patientId ?? session.email ?? 'anon'}`;
 
   refreshInFlight = true;
   if (!silent) {
@@ -178,6 +184,30 @@ export async function refreshClinicFlowStore(dateOverride, { silent = false } = 
       queueRes,
     ].find((r) => r.status === 'rejected')?.reason?.message || null;
 
+    const incomingNotifications =
+      notificationsRes.status === 'fulfilled' && Array.isArray(notificationsRes.value)
+        ? notificationsRes.value
+        : null;
+
+    let newlyArrivedNotification = null;
+    if (incomingNotifications) {
+      if (notificationsHydratedForKey !== sessionKey) {
+        seenNotificationIds.clear();
+        incomingNotifications.forEach((n) => seenNotificationIds.add(String(n.id)));
+        notificationsHydratedForKey = sessionKey;
+      } else {
+        const freshUnread = incomingNotifications.filter(
+          (n) => !seenNotificationIds.has(String(n.id)) && !n.read,
+        );
+        incomingNotifications.forEach((n) => seenNotificationIds.add(String(n.id)));
+        if (!isStaff && freshUnread.length > 0) {
+          newlyArrivedNotification =
+            freshUnread.find((n) => n.type === 'next' || n.type === 'approaching') ||
+            freshUnread[0];
+        }
+      }
+    }
+
     updateStore((prev) => ({
       ...prev,
       services: servicesRes.status === 'fulfilled' && Array.isArray(servicesRes.value)
@@ -203,9 +233,7 @@ export async function refreshClinicFlowStore(dateOverride, { silent = false } = 
             entries: Array.isArray(queueRes.value.entries) ? queueRes.value.entries : [],
           }
         : prev.queue,
-      notifications: notificationsRes.status === 'fulfilled' && Array.isArray(notificationsRes.value)
-        ? notificationsRes.value
-        : prev.notifications,
+      notifications: incomingNotifications ?? prev.notifications,
       dailyStats: reportRes.status === 'fulfilled' && Array.isArray(reportRes.value?.dailyStats)
         ? reportRes.value.dailyStats
         : prev.dailyStats,
@@ -229,6 +257,15 @@ export async function refreshClinicFlowStore(dateOverride, { silent = false } = 
       loading: false,
       error: firstError,
     }));
+
+    if (newlyArrivedNotification) {
+      playNotificationSound(newlyArrivedNotification.type);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('clinicflow:notification', { detail: newlyArrivedNotification }),
+        );
+      }
+    }
   } finally {
     refreshInFlight = false;
   }
@@ -365,12 +402,20 @@ export function useClinicFlowStore() {
     await refreshClinicFlowStore();
   }, []);
 
-  const confirmPayment = useCallback(async (appointmentId, paymentMethod) => {
-    const numericId = resolveNumericId(currentState.appointments, appointmentId, 'appointmentId');
-    if (!numericId) return;
-    await paymentApi.confirmPayment(numericId, paymentMethod);
-    await refreshClinicFlowStore();
-  }, []);
+  const confirmPayment = useCallback(
+    async (appointmentId, paymentMethod, referenceNumber = '', confirmedBy = 'patient') => {
+      const numericId = resolveNumericId(currentState.appointments, appointmentId, 'appointmentId');
+      if (!numericId) return null;
+      const saved = await paymentApi.confirmPayment(numericId, {
+        method: paymentMethod,
+        referenceNumber,
+        confirmedBy,
+      });
+      await refreshClinicFlowStore();
+      return saved;
+    },
+    [],
+  );
 
   const markNotificationRead = useCallback(async (id) => {
     const numericId = resolveNumericId(currentState.notifications, id, 'notificationId');

@@ -15,14 +15,12 @@ import BookAppointmentPage from '../pages/patient/BookAppointmentPage';
 import BillingPage from '../pages/patient/BillingPage';
 import NotificationsPage from '../pages/patient/NotificationsPage';
 import MyQueuePage from '../pages/patient/MyQueuePage';
-import HistoryPage from '../pages/patient/HistoryPage';
 
 // Staff/Admin pages (Padilla)
 import StaffDashboard from '../pages/staff/StaffDashboard';
 import PatientsPage from '../pages/staff/PatientsPage';
 import AppointmentsPage from '../pages/staff/AppointmentsPage';
 import ServicesPage from '../pages/staff/ServicesPage';
-import DoctorsPage from '../pages/staff/DoctorsPage';
 import QueueManagementPage from '../pages/staff/QueueManagementPage';
 import ReportsPage from '../pages/staff/ReportsPage';
 import StaffAccountsPage from '../pages/staff/StaffAccountsPage';
@@ -54,7 +52,7 @@ export default function AppRoutes() {
           <Route path="billing" element={<BillingPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="queue" element={<MyQueuePage />} />
-          <Route path="history" element={<HistoryPage />} />
+          <Route path="history" element={<Navigate to="/patient/queue" replace />} />
         </Route>
 
         {/* Staff / Admin Portal (staff accounts only) */}
@@ -67,7 +65,7 @@ export default function AppRoutes() {
           <Route path="patients" element={<PatientsPage />} />
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="services" element={<ServicesPage />} />
-          <Route path="doctors" element={<DoctorsPage />} />
+          <Route path="doctors" element={<Navigate to="/staff/services?tab=doctors" replace />} />
           <Route path="queue" element={<QueueManagementPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="accounts" element={<StaffAccountsPage />} />
