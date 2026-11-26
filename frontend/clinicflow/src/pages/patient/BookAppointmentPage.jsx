@@ -31,6 +31,7 @@ export default function BookAppointmentPage() {
 
   const slotsForDate = getSlotsForDate(state.slotsByDate, date);
   const selectedService = activeServices.find((s) => s.id === effectiveServiceId) || activeServices[0];
+  const selectedDoctor = availableDoctors.find((d) => d.name === effectiveDoctorName) || availableDoctors[0];
 
   const handleBook = async (e) => {
     e.preventDefault();
@@ -155,6 +156,11 @@ export default function BookAppointmentPage() {
                 </option>
               ))}
             </select>
+            {selectedDoctor?.schedule && (
+              <div style={{ fontSize: 12, color: '#0F766E', marginTop: 6, fontWeight: 500 }}>
+                Doctor schedule: {selectedDoctor.schedule}
+              </div>
+            )}
           </div>
 
           <div>

@@ -48,6 +48,11 @@ const INITIAL_STATE = {
   queue: {
     nowServingNumber: 0,
     patientQueueNumber: 0,
+    patientQueueCode: null,
+    patientQueueStatus: null,
+    hasActiveTicket: false,
+    patientServiceName: null,
+    patientDoctorName: null,
     totalInQueue: 0,
     avgMinutesPerPatient: 5,
     entries: [],
@@ -66,6 +71,7 @@ let currentState = INITIAL_STATE;
 const listeners = new Set();
 let initialized = false;
 let activeDate = DEFAULT_DATE;
+let refreshInFlight = false;
 
 function emitChange() {
   listeners.forEach((listener) => listener());
@@ -118,10 +124,13 @@ export async function loadSlotsForDate(date) {
   }
 }
 
-export async function refreshClinicFlowStore(dateOverride) {
+export async function refreshClinicFlowStore(dateOverride, { silent = false } = {}) {
   const session = getActiveSession();
   if (!session) {
     updateStore(INITIAL_STATE);
+    return;
+  }
+  if (silent && refreshInFlight) {
     return;
   }
 
@@ -130,87 +139,99 @@ export async function refreshClinicFlowStore(dateOverride) {
   const isStaff = session.role === 'staff';
   const patientId = getScopedPatientId(session);
 
-  updateStore((prev) => ({ ...prev, loading: true }));
+  refreshInFlight = true;
+  if (!silent) {
+    updateStore((prev) => ({ ...prev, loading: true }));
+  }
 
-  const [
-    servicesRes,
-    doctorsRes,
-    appointmentsRes,
-    queueRes,
-    notificationsRes,
-    reportRes,
-    historyRes,
-    slotsRes,
-    profileRes,
-    staffPatientsRes,
-    staffAccountsRes,
-  ] = await Promise.allSettled([
-    serviceApi.getServices(),
-    doctorApi.getDoctors(),
-    appointmentApi.getAppointments(patientId),
-    isStaff ? queueApi.getQueueSnapshot(null) : myQueueApi.getMyQueue(patientId),
-    notificationApi.getNotifications(patientId),
-    isStaff ? reportApi.getReportSummary() : Promise.resolve(null),
-    historyApi.getVisitHistory(patientId),
-    appointmentApi.getSlotsByDate(targetDate),
-    isStaff ? Promise.resolve(null) : patientApi.getPatientProfile(patientId),
-    isStaff ? patientApi.getStaffPatients() : Promise.resolve([]),
-    isStaff ? staffApi.getStaffAccounts() : Promise.resolve([]),
-  ]);
+  try {
+    const [
+      servicesRes,
+      doctorsRes,
+      appointmentsRes,
+      queueRes,
+      notificationsRes,
+      reportRes,
+      historyRes,
+      slotsRes,
+      profileRes,
+      staffPatientsRes,
+      staffAccountsRes,
+    ] = await Promise.allSettled([
+      serviceApi.getServices(),
+      doctorApi.getDoctors(),
+      appointmentApi.getAppointments(patientId),
+      isStaff ? queueApi.getQueueSnapshot(null) : myQueueApi.getMyQueue(patientId),
+      notificationApi.getNotifications(patientId),
+      isStaff ? reportApi.getReportSummary() : Promise.resolve(null),
+      historyApi.getVisitHistory(patientId),
+      appointmentApi.getSlotsByDate(targetDate),
+      isStaff ? Promise.resolve(null) : patientApi.getPatientProfile(patientId),
+      isStaff ? patientApi.getStaffPatients() : Promise.resolve([]),
+      isStaff ? staffApi.getStaffAccounts() : Promise.resolve([]),
+    ]);
 
-  const firstError = [
-    servicesRes,
-    doctorsRes,
-    appointmentsRes,
-    queueRes,
-  ].find((r) => r.status === 'rejected')?.reason?.message || null;
+    const firstError = [
+      servicesRes,
+      doctorsRes,
+      appointmentsRes,
+      queueRes,
+    ].find((r) => r.status === 'rejected')?.reason?.message || null;
 
-  updateStore((prev) => ({
-    ...prev,
-    services: servicesRes.status === 'fulfilled' && Array.isArray(servicesRes.value)
-      ? servicesRes.value
-      : prev.services,
-    doctors: doctorsRes.status === 'fulfilled' && Array.isArray(doctorsRes.value)
-      ? doctorsRes.value
-      : prev.doctors,
-    appointments: appointmentsRes.status === 'fulfilled' && Array.isArray(appointmentsRes.value)
-      ? appointmentsRes.value
-      : prev.appointments,
-    queue: queueRes.status === 'fulfilled' && queueRes.value
-      ? {
-          nowServingNumber: queueRes.value.nowServingNumber ?? 0,
-          patientQueueNumber: queueRes.value.patientQueueNumber ?? 0,
-          totalInQueue: queueRes.value.totalInQueue ?? 0,
-          avgMinutesPerPatient: queueRes.value.avgMinutesPerPatient ?? 5,
-          entries: Array.isArray(queueRes.value.entries) ? queueRes.value.entries : [],
-        }
-      : prev.queue,
-    notifications: notificationsRes.status === 'fulfilled' && Array.isArray(notificationsRes.value)
-      ? notificationsRes.value
-      : prev.notifications,
-    dailyStats: reportRes.status === 'fulfilled' && Array.isArray(reportRes.value?.dailyStats)
-      ? reportRes.value.dailyStats
-      : prev.dailyStats,
-    visitHistory: historyRes.status === 'fulfilled' && Array.isArray(historyRes.value)
-      ? historyRes.value
-      : prev.visitHistory,
-    slotsByDate: slotsRes.status === 'fulfilled' && Array.isArray(slotsRes.value)
-      ? { ...prev.slotsByDate, [targetDate]: slotsRes.value }
-      : prev.slotsByDate,
-    patient: isStaff
-      ? INITIAL_STATE.patient
-      : profileRes.status === 'fulfilled' && profileRes.value
-        ? { ...prev.patient, ...profileRes.value }
-        : prev.patient,
-    patients: isStaff && staffPatientsRes.status === 'fulfilled' && Array.isArray(staffPatientsRes.value)
-      ? staffPatientsRes.value
-      : [],
-    staffAccounts: isStaff && staffAccountsRes.status === 'fulfilled' && Array.isArray(staffAccountsRes.value)
-      ? staffAccountsRes.value
-      : [],
-    loading: false,
-    error: firstError,
-  }));
+    updateStore((prev) => ({
+      ...prev,
+      services: servicesRes.status === 'fulfilled' && Array.isArray(servicesRes.value)
+        ? servicesRes.value
+        : prev.services,
+      doctors: doctorsRes.status === 'fulfilled' && Array.isArray(doctorsRes.value)
+        ? doctorsRes.value
+        : prev.doctors,
+      appointments: appointmentsRes.status === 'fulfilled' && Array.isArray(appointmentsRes.value)
+        ? appointmentsRes.value
+        : prev.appointments,
+      queue: queueRes.status === 'fulfilled' && queueRes.value
+        ? {
+            nowServingNumber: queueRes.value.nowServingNumber ?? 0,
+            patientQueueNumber: queueRes.value.patientQueueNumber ?? 0,
+            patientQueueCode: queueRes.value.patientQueueCode ?? null,
+            patientQueueStatus: queueRes.value.patientQueueStatus ?? null,
+            hasActiveTicket: Boolean(queueRes.value.hasActiveTicket),
+            patientServiceName: queueRes.value.patientServiceName ?? null,
+            patientDoctorName: queueRes.value.patientDoctorName ?? null,
+            totalInQueue: queueRes.value.totalInQueue ?? 0,
+            avgMinutesPerPatient: queueRes.value.avgMinutesPerPatient ?? 5,
+            entries: Array.isArray(queueRes.value.entries) ? queueRes.value.entries : [],
+          }
+        : prev.queue,
+      notifications: notificationsRes.status === 'fulfilled' && Array.isArray(notificationsRes.value)
+        ? notificationsRes.value
+        : prev.notifications,
+      dailyStats: reportRes.status === 'fulfilled' && Array.isArray(reportRes.value?.dailyStats)
+        ? reportRes.value.dailyStats
+        : prev.dailyStats,
+      visitHistory: historyRes.status === 'fulfilled' && Array.isArray(historyRes.value)
+        ? historyRes.value
+        : prev.visitHistory,
+      slotsByDate: slotsRes.status === 'fulfilled' && Array.isArray(slotsRes.value)
+        ? { ...prev.slotsByDate, [targetDate]: slotsRes.value }
+        : prev.slotsByDate,
+      patient: isStaff
+        ? INITIAL_STATE.patient
+        : profileRes.status === 'fulfilled' && profileRes.value
+          ? { ...prev.patient, ...profileRes.value }
+          : prev.patient,
+      patients: isStaff && staffPatientsRes.status === 'fulfilled' && Array.isArray(staffPatientsRes.value)
+        ? staffPatientsRes.value
+        : [],
+      staffAccounts: isStaff && staffAccountsRes.status === 'fulfilled' && Array.isArray(staffAccountsRes.value)
+        ? staffAccountsRes.value
+        : [],
+      loading: false,
+      error: firstError,
+    }));
+  } finally {
+    refreshInFlight = false;
+  }
 }
 
 function subscribe(listener) {
@@ -228,6 +249,24 @@ if (typeof window !== 'undefined') {
   window.addEventListener('clinicflow:session', () => {
     refreshClinicFlowStore();
   });
+
+  window.addEventListener('focus', () => {
+    if (getActiveSession()) {
+      refreshClinicFlowStore(undefined, { silent: true });
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && getActiveSession()) {
+      refreshClinicFlowStore(undefined, { silent: true });
+    }
+  });
+
+  window.setInterval(() => {
+    if (document.visibilityState === 'visible' && getActiveSession()) {
+      refreshClinicFlowStore(undefined, { silent: true });
+    }
+  }, 5000);
 }
 
 export function useClinicFlowStore() {

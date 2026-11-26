@@ -58,15 +58,36 @@ public class QueueService {
                 ? parseQueueNum(serving.getQueueNumber())
                 : (queue != null ? queue.getNowServing() : 0);
 
-        QueueEntry patientEntry = entries.stream()
-                .filter(e -> patientId == null
-                        || e.getAppointment().getPatient().getPatientId().equals(patientId))
-                .reduce((first, second) -> second)
-                .orElse(null);
+        QueueEntry patientEntry = null;
+        if (patientId != null) {
+            List<QueueEntry> patientEntries = entries.stream()
+                    .filter(e -> e.getAppointment().getPatient().getPatientId().equals(patientId))
+                    .toList();
+            patientEntry = patientEntries.stream()
+                    .filter(e -> "Serving".equals(e.getStatus())
+                            || "Waiting".equals(e.getStatus())
+                            || "On Hold".equals(e.getStatus()))
+                    .reduce((first, second) -> second)
+                    .orElseGet(() -> patientEntries.isEmpty() ? null : patientEntries.get(patientEntries.size() - 1));
+        } else if (!entries.isEmpty()) {
+            patientEntry = entries.get(entries.size() - 1);
+        }
 
         int patientQueueNumber = patientEntry != null
                 ? parseQueueNum(patientEntry.getQueueNumber())
-                : nowServingNumber;
+                : 0;
+        String patientQueueStatus = patientEntry != null ? patientEntry.getStatus() : null;
+        boolean hasActiveTicket = patientEntry != null
+                && !"Completed".equalsIgnoreCase(patientQueueStatus)
+                && !"Skipped".equalsIgnoreCase(patientQueueStatus);
+        String patientServiceName = patientEntry != null
+                && patientEntry.getAppointment().getResolvedService() != null
+                ? patientEntry.getAppointment().getResolvedService().getServiceName()
+                : null;
+        String patientDoctorName = patientEntry != null
+                && patientEntry.getAppointment().getResolvedDoctor() != null
+                ? patientEntry.getAppointment().getResolvedDoctor().getDoctorName()
+                : null;
 
         List<Map<String, Object>> entryDtos = entries.stream().map(e -> {
             Appointment apt = e.getAppointment();
@@ -84,6 +105,11 @@ public class QueueService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("nowServingNumber", nowServingNumber);
         result.put("patientQueueNumber", patientQueueNumber);
+        result.put("patientQueueCode", patientEntry != null ? patientEntry.getQueueNumber() : null);
+        result.put("patientQueueStatus", patientQueueStatus);
+        result.put("hasActiveTicket", hasActiveTicket);
+        result.put("patientServiceName", patientServiceName);
+        result.put("patientDoctorName", patientDoctorName);
         result.put("totalInQueue", entries.size());
         result.put("avgMinutesPerPatient", 5);
         result.put("entries", entryDtos);
