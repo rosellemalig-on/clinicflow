@@ -143,7 +143,7 @@ export function SchedulePicker({
       {open && (
         <div
           className={`mt-3 grid gap-3 ${
-            stacked ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]"
+            stacked ? "grid-cols-1" : "grid-cols-1 xl:grid-cols-[1.15fr_0.85fr]"
           }`}
         >
           {/* Calendar or Weekly Picker */}
@@ -370,7 +370,7 @@ export function SchedulePicker({
                 <span className="block text-[11px] font-semibold text-slate-500">
                   Quick shift presets
                 </span>
-                <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                <div className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {TIME_PRESETS.map((preset) => {
                     const active =
                       value.startTime === preset.start && value.endTime === preset.end;
@@ -385,7 +385,7 @@ export function SchedulePicker({
                             endTime: preset.end,
                           })
                         }
-                        className={`whitespace-nowrap rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition ${
+                        className={`rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition ${
                           active
                             ? "border-teal-700 bg-teal-50 text-teal-800"
                             : "border-slate-200 bg-slate-50 text-slate-600 hover:border-teal-500 hover:bg-white"

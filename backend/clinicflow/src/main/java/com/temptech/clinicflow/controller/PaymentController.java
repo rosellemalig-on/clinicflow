@@ -33,9 +33,15 @@ public class PaymentController {
             @RequestBody(required = false) Map<String, String> body
     ) {
         String method = null;
+        String referenceNumber = null;
+        String confirmedBy = "patient";
         if (body != null) {
             method = body.containsKey("method") ? body.get("method") : body.get("paymentMethod");
+            referenceNumber = body.get("referenceNumber");
+            if (body.get("confirmedBy") != null && !body.get("confirmedBy").isBlank()) {
+                confirmedBy = body.get("confirmedBy").trim();
+            }
         }
-        return paymentService.confirmPayment(appointmentId, method);
+        return paymentService.confirmPayment(appointmentId, method, referenceNumber, confirmedBy);
     }
 }

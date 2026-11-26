@@ -247,6 +247,7 @@ public class AppointmentService {
         map.put("status", apt.getStatus() != null ? apt.getStatus() : "Confirmed");
         map.put("paymentStatus", payment != null ? payment.getStatus() : "Pending");
         map.put("paymentMethod", payment != null ? payment.getMethod() : "Unselected");
+        map.put("paymentReference", payment != null && payment.getReferenceNumber() != null ? payment.getReferenceNumber() : "");
         return map;
     }
 

@@ -30,6 +30,9 @@ public class Payment {
 
     private String method;
 
+    @Column(length = 100)
+    private String referenceNumber;
+
     private String status;
 
     private LocalDateTime paidAt;
@@ -66,6 +69,14 @@ public class Payment {
 
     public void setMethod(String method) {
         this.method = method;
+    }
+
+    public String getReferenceNumber() {
+        return referenceNumber;
+    }
+
+    public void setReferenceNumber(String referenceNumber) {
+        this.referenceNumber = referenceNumber;
     }
 
     public String getStatus() {
