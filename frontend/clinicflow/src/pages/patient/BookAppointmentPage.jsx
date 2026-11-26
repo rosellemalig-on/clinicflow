@@ -3,8 +3,120 @@
 // FEATURE : Feature 2 Book Appointment
 // ============================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getSlotsForDate, useClinicFlowStore } from '../../data/clinicFlowStore';
+
+function SelectDropdown({ label, placeholder, options, selectedValue, onSelect, helperText }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  const selectedOption = options.find((opt) => opt.value === selectedValue) || null;
+
+  return (
+    <div ref={containerRef} className="relative min-w-0">
+      <label className="mb-1.5 block text-[13px] font-semibold text-slate-800">{label}</label>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`flex w-full items-center justify-between gap-3 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm transition ${
+          open
+            ? 'border-teal-600 ring-2 ring-teal-600/15'
+            : 'border-slate-300 hover:border-slate-400'
+        }`}
+      >
+        <div className="min-w-0 flex-1">
+          {selectedOption ? (
+            <>
+              <div className="truncate font-semibold text-[#062b26]">{selectedOption.title}</div>
+              {selectedOption.subtitle && (
+                <div className="truncate text-xs text-slate-500">{selectedOption.subtitle}</div>
+              )}
+            </>
+          ) : (
+            <span className="text-slate-400">{placeholder}</span>
+          )}
+        </div>
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          className={`size-4 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        >
+          <path d="M5.5 7.5 10 12l4.5-4.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute left-0 right-0 z-30 mt-1.5 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-900/10"
+        >
+          {options.length === 0 ? (
+            <div className="px-3 py-2.5 text-xs text-slate-400">No options available</div>
+          ) : (
+            options.map((opt) => {
+              const isSelected = opt.value === selectedValue;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onSelect(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full flex-col rounded-lg px-3 py-2 text-left transition ${
+                    isSelected
+                      ? 'bg-teal-700 text-white'
+                      : 'text-slate-800 hover:bg-teal-50'
+                  }`}
+                >
+                  <span className="text-sm font-semibold leading-snug">{opt.title}</span>
+                  {opt.subtitle && (
+                    <span
+                      className={`mt-0.5 text-xs leading-snug ${
+                        isSelected ? 'text-teal-100' : 'text-slate-500'
+                      }`}
+                    >
+                      {opt.subtitle}
+                    </span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {helperText && (
+        <p className="mt-1.5 text-xs font-medium text-teal-700">{helperText}</p>
+      )}
+    </div>
+  );
+}
 
 export default function BookAppointmentPage() {
   const { state, bookAppointment, loadSlotsForDate } = useClinicFlowStore();
@@ -32,6 +144,18 @@ export default function BookAppointmentPage() {
   const slotsForDate = getSlotsForDate(state.slotsByDate, date);
   const selectedService = activeServices.find((s) => s.id === effectiveServiceId) || activeServices[0];
   const selectedDoctor = availableDoctors.find((d) => d.name === effectiveDoctorName) || availableDoctors[0];
+
+  const serviceOptions = activeServices.map((s) => ({
+    value: s.id,
+    title: s.name,
+    subtitle: `₱${Number(s.fee || 0).toLocaleString()} · ${s.durationMin} mins`,
+  }));
+
+  const doctorOptions = availableDoctors.map((d) => ({
+    value: d.name,
+    title: d.name,
+    subtitle: d.schedule ? `${d.specialty} · ${d.schedule}` : d.specialty,
+  }));
 
   const handleBook = async (e) => {
     e.preventDefault();
@@ -75,42 +199,24 @@ export default function BookAppointmentPage() {
   };
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-      <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: '#0F766E', margin: 0 }}>
-        APPOINTMENT SCHEDULER
-      </p>
-      <h1 style={{ margin: '4px 0 6px', color: '#062B26', fontSize: 28 }}>Book Appointment</h1>
-      <p style={{ margin: '0 0 18px', color: '#4B5563' }}>
-        Booking as <strong>{state.patient.fullName}</strong> ({state.patient.phone}) — records preloaded from your profile.
+    <div className="mx-auto max-w-4xl">
+      <p className="eyebrow">Appointment scheduler</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#062b26]">
+        Book Appointment
+      </h1>
+      <p className="mt-1.5 text-sm text-slate-600">
+        Booking as <strong className="text-[#062b26]">{state.patient.fullName}</strong> ({state.patient.phone}) — records preloaded from your profile.
       </p>
 
       {alertState && (
         <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: 10,
-            marginBottom: 18,
-            fontWeight: 500,
-            background:
-              alertState.type === 'success'
-                ? '#ECFDF5'
-                : alertState.type === 'full'
-                ? '#FEF2F2'
-                : '#FFFBEB',
-            color:
-              alertState.type === 'success'
-                ? '#065F46'
-                : alertState.type === 'full'
-                ? '#991B1B'
-                : '#92400E',
-            border: `1px solid ${
-              alertState.type === 'success'
-                ? '#10B981'
-                : alertState.type === 'full'
-                ? '#EF4444'
-                : '#F59E0B'
-            }`,
-          }}
+          className={`mt-5 rounded-xl border px-4 py-3 text-sm font-medium ${
+            alertState.type === 'success'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+              : alertState.type === 'full'
+                ? 'border-red-300 bg-red-50 text-red-900'
+                : 'border-amber-300 bg-amber-50 text-amber-900'
+          }`}
         >
           {alertState.type === 'full' ? `SLOT FULL: ${alertState.text}` : alertState.text}
         </div>
@@ -118,71 +224,48 @@ export default function BookAppointmentPage() {
 
       <form
         onSubmit={handleBook}
-        style={{
-          background: '#FFFFFF',
-          border: '1px solid #E5E7EB',
-          borderRadius: 16,
-          padding: 24,
-          display: 'grid',
-          gap: 20,
-        }}
+        className="mt-6 space-y-5 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs"
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Clinic Service</label>
-            <select
-              value={effectiveServiceId}
-              onChange={(e) => setServiceId(e.target.value)}
-              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }}
-            >
-              {activeServices.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} (₱{s.fee} · {s.durationMin}m)
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <SelectDropdown
+            label="Clinic Service"
+            placeholder="Select a service"
+            options={serviceOptions}
+            selectedValue={effectiveServiceId}
+            onSelect={setServiceId}
+          />
 
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Preferred Doctor</label>
-            <select
-              value={effectiveDoctorName}
-              onChange={(e) => setDoctorName(e.target.value)}
-              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }}
-            >
-              {availableDoctors.map((d) => (
-                <option key={d.id} value={d.name}>
-                  {d.name} — {d.specialty}
-                </option>
-              ))}
-            </select>
-            {selectedDoctor?.schedule && (
-              <div style={{ fontSize: 12, color: '#0F766E', marginTop: 6, fontWeight: 500 }}>
-                Doctor schedule: {selectedDoctor.schedule}
-              </div>
-            )}
-          </div>
+          <SelectDropdown
+            label="Preferred Doctor"
+            placeholder="Select a doctor"
+            options={doctorOptions}
+            selectedValue={effectiveDoctorName}
+            onSelect={setDoctorName}
+            helperText={selectedDoctor?.schedule ? `Doctor schedule: ${selectedDoctor.schedule}` : undefined}
+          />
+        </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Appointment Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => {
-                setDate(e.target.value);
-                setSelectedSlotId('');
-                setAlertState(null);
-              }}
-              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }}
-            />
-          </div>
+        <div className="max-w-xs">
+          <label className="mb-1.5 block text-[13px] font-semibold text-slate-800">
+            Appointment Date
+          </label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => {
+              setDate(e.target.value);
+              setSelectedSlotId('');
+              setAlertState(null);
+            }}
+            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15"
+          />
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+          <label className="mb-2 block text-[13px] font-semibold text-slate-800">
             Available Time Slots (Double-Booking Protected)
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
             {slotsForDate.map((slot) => {
               const isFull = slot.booked >= slot.capacity;
               const isSelected = selectedSlotId === slot.id;
@@ -196,22 +279,16 @@ export default function BookAppointmentPage() {
                     setSelectedSlotId(slot.id);
                     setAlertState(null);
                   }}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 10,
-                    textAlign: 'left',
-                    cursor: isFull ? 'not-allowed' : 'pointer',
-                    background: isFull ? '#FEE2E2' : isSelected ? '#062B26' : '#F9FAFB',
-                    color: isFull ? '#991B1B' : isSelected ? '#FFFFFF' : '#111827',
-                    border: isFull
-                      ? '1px solid #FCA5A5'
+                  className={`rounded-xl border px-3.5 py-3 text-left transition ${
+                    isFull
+                      ? 'cursor-not-allowed border-red-200 bg-red-50 text-red-800'
                       : isSelected
-                      ? '1px solid #062B26'
-                      : '1px solid #D1D5DB',
-                  }}
+                        ? 'border-[#062b26] bg-[#062b26] text-white shadow-xs'
+                        : 'border-slate-300 bg-slate-50 text-slate-900 hover:border-teal-600 hover:bg-teal-50/50'
+                  }`}
                 >
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{slot.time}</div>
-                  <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
+                  <div className="text-sm font-bold">{slot.time}</div>
+                  <div className="mt-1 text-xs opacity-90">
                     {isFull ? 'Slot Full' : `${slot.capacity - slot.booked} slot(s) left`}
                   </div>
                 </button>
@@ -220,37 +297,17 @@ export default function BookAppointmentPage() {
           </div>
         </div>
 
-        <div
-          style={{
-            background: '#F6F8F7',
-            borderRadius: 12,
-            padding: 16,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#f6f8f7] p-4">
           <div>
-            <div style={{ fontSize: 12, color: '#4B5563' }}>Estimated Consultation Fee</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#062B26' }}>
-              ₱{selectedService ? selectedService.fee.toLocaleString() : 0}
+            <div className="text-xs text-slate-500">Estimated Consultation Fee</div>
+            <div className="text-2xl font-bold text-[#062b26]">
+              ₱{selectedService ? Number(selectedService.fee || 0).toLocaleString() : 0}
             </div>
           </div>
           <button
             type="submit"
             disabled={submitting}
-            style={{
-              background: '#0F766E',
-              color: '#FFFFFF',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: 10,
-              fontWeight: 600,
-              cursor: submitting ? 'wait' : 'pointer',
-              opacity: submitting ? 0.7 : 1,
-            }}
+            className="primary-button px-6 py-3 disabled:cursor-wait disabled:opacity-70"
           >
             {submitting ? 'Booking...' : 'Confirm Appointment'}
           </button>
