@@ -3,9 +3,11 @@
 // FEATURE : Feature 5 & 6 — My Queue & Appointment History
 // ============================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useClinicFlowStore } from "@/data/clinicFlowStore";
+
+const CANCEL_CUTOFF_MS = 20 * 60 * 1000;
 
 const HISTORY_FILTERS = [
   ["all", "All"],
@@ -14,9 +16,104 @@ const HISTORY_FILTERS = [
   ["Cancelled", "Cancelled"],
 ];
 
+function parseScheduledTimestamp(apt) {
+  if (!apt) return null;
+
+  if (apt.scheduledAt) {
+    const match = String(apt.scheduledAt).match(
+      /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/,
+    );
+    if (match) {
+      const [, y, m, d, hh, mm, ss = "0"] = match;
+      return new Date(
+        Number(y),
+        Number(m) - 1,
+        Number(d),
+        Number(hh),
+        Number(mm),
+        Number(ss),
+      ).getTime();
+    }
+  }
+
+  if (apt.date && apt.time) {
+    const dateParts = String(apt.date).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const timeParts = String(apt.time)
+      .trim()
+      .match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (dateParts && timeParts) {
+      let hours = Number(timeParts[1]);
+      const minutes = Number(timeParts[2]);
+      const meridiem = timeParts[3].toUpperCase();
+      if (meridiem === "PM" && hours !== 12) hours += 12;
+      if (meridiem === "AM" && hours === 12) hours = 0;
+      return new Date(
+        Number(dateParts[1]),
+        Number(dateParts[2]) - 1,
+        Number(dateParts[3]),
+        hours,
+        minutes,
+        0,
+      ).getTime();
+    }
+  }
+
+  return null;
+}
+
+function getCancellationState(apt, nowMs, queueStatus = null) {
+  if (!apt || apt.status !== "Confirmed") {
+    return { canCancel: false, locked: false, reason: "" };
+  }
+
+  if (queueStatus === "Serving") {
+    return {
+      canCancel: false,
+      locked: true,
+      reason: "Currently being served — cannot cancel",
+    };
+  }
+
+  const scheduledMs = parseScheduledTimestamp(apt);
+  if (scheduledMs == null) {
+    return { canCancel: true, locked: false, reason: "" };
+  }
+
+  const msRemaining = scheduledMs - nowMs;
+  if (msRemaining <= 0) {
+    return {
+      canCancel: false,
+      locked: true,
+      reason: "Scheduled time has passed",
+    };
+  }
+
+  if (msRemaining <= CANCEL_CUTOFF_MS) {
+    const minsLeft = Math.max(1, Math.ceil(msRemaining / 60000));
+    return {
+      canCancel: false,
+      locked: true,
+      reason: `Cannot cancel within 20 mins (${minsLeft}m left)`,
+    };
+  }
+
+  return { canCancel: true, locked: false, reason: "" };
+}
+
 export default function MyQueuePage() {
-  const { state } = useClinicFlowStore();
+  const { state, cancelAppointment } = useClinicFlowStore();
   const [historyFilter, setHistoryFilter] = useState("all");
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [confirmingId, setConfirmingId] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [cancelFeedback, setCancelFeedback] = useState(null);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const {
     nowServingNumber,
@@ -26,10 +123,12 @@ export default function MyQueuePage() {
     hasActiveTicket,
     patientServiceName,
     patientDoctorName,
+    patientAppointmentId,
     avgMinutesPerPatient,
   } = state.queue;
 
-  const hasTicket = patientQueueNumber > 0;
+  const hasTicket =
+    patientQueueNumber > 0 && patientQueueStatus !== "Cancelled";
   const isActiveTicket = hasActiveTicket && hasTicket;
   const peopleAhead = hasTicket ? Math.max(0, patientQueueNumber - nowServingNumber) : 0;
   const estWaitMin = peopleAhead * avgMinutesPerPatient;
@@ -61,6 +160,23 @@ export default function MyQueuePage() {
   const badgeLabel = !hasTicket ? "Not in Queue" : patientQueueStatus || "Live Status";
   const serviceHeading = (patientServiceName || "CLINIC QUEUE").toUpperCase();
 
+  const activeAppointment =
+    (patientAppointmentId != null
+      ? state.appointments.find((a) => a.appointmentId === patientAppointmentId)
+      : null) ||
+    (patientQueueCode
+      ? state.appointments.find(
+          (a) => a.queueNumber === patientQueueCode && a.status === "Confirmed",
+        )
+      : null) ||
+    null;
+
+  const activeCancelState = getCancellationState(
+    activeAppointment,
+    nowMs,
+    patientQueueStatus,
+  );
+
   const approachingAlert = state.notifications.find(
     (n) => !n.read && (n.type === "approaching" || n.type === "next"),
   );
@@ -70,6 +186,26 @@ export default function MyQueuePage() {
     historyFilter === "all" ? true : apt.status === historyFilter,
   );
 
+  const handleConfirmCancel = async (apt) => {
+    setCancelFeedback(null);
+    setCancellingId(apt.id);
+    try {
+      await cancelAppointment(apt.id);
+      setConfirmingId(null);
+      setCancelFeedback({
+        type: "success",
+        text: `Cancelled ${apt.serviceName} (${apt.date} at ${apt.time}). Your slot has been released.`,
+      });
+    } catch (err) {
+      setCancelFeedback({
+        type: "error",
+        text: err.message || "Unable to cancel this appointment.",
+      });
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-4xl">
       <p className="eyebrow">Live queue &amp; visit log</p>
@@ -77,11 +213,23 @@ export default function MyQueuePage() {
         Queue &amp; Appointment History
       </h1>
       <p className="mt-1.5 text-sm text-slate-500">
-        Track your current queue position in real time and review your recorded clinic visits.
+        Track your current queue position in real time and manage or cancel upcoming appointments (up to 20 minutes before schedule).
       </p>
 
+      {cancelFeedback && (
+        <div
+          className={`mt-5 rounded-xl border px-4 py-3 text-sm font-medium shadow-2xs ${
+            cancelFeedback.type === "success"
+              ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+              : "border-rose-300 bg-rose-50 text-rose-800"
+          }`}
+        >
+          {cancelFeedback.text}
+        </div>
+      )}
+
       {/* Live Queue Tracker */}
-      <section className="mt-6 rounded-2xl bg-[#062b26] p-5 text-white shadow-xl shadow-teal-950/15 sm:p-7">
+      <section className="mt-6 rounded-2xl bg-gradient-to-br from-[#052622] via-[#073630] to-[#0d544b] p-5 text-white shadow-xl shadow-teal-950/15 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-bold tracking-[.12em] text-teal-200/80">
@@ -89,6 +237,11 @@ export default function MyQueuePage() {
               {patientDoctorName ? ` · ${patientDoctorName.toUpperCase()}` : ""}
             </p>
             <p className="mt-1 text-lg font-bold sm:text-xl">{statusText}</p>
+            {activeAppointment && isActiveTicket && (
+              <p className="mt-1 text-xs text-teal-200/85">
+                Scheduled: {activeAppointment.date} at {activeAppointment.time}
+              </p>
+            )}
           </div>
           <span
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
@@ -155,6 +308,58 @@ export default function MyQueuePage() {
                 />
               </div>
             </div>
+
+            {/* Active Ticket Cancellation Bar */}
+            {isActiveTicket && activeAppointment && (
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-4">
+                {activeCancelState.canCancel ? (
+                  confirmingId === `hero-${activeAppointment.id}` ? (
+                    <>
+                      <p className="text-xs font-medium text-amber-200">
+                        Cancel {activeAppointment.serviceName} ({activeAppointment.date} at{" "}
+                        {activeAppointment.time})?
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(null)}
+                          className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+                        >
+                          Keep appointment
+                        </button>
+                        <button
+                          type="button"
+                          disabled={cancellingId === activeAppointment.id}
+                          onClick={() => handleConfirmCancel(activeAppointment)}
+                          className="rounded-lg bg-rose-500 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-rose-600 disabled:opacity-60"
+                        >
+                          {cancellingId === activeAppointment.id
+                            ? "Cancelling…"
+                            : "Yes, cancel"}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs text-teal-100/80">
+                        Need to reschedule? You can cancel up to 20 minutes before your appointment.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(`hero-${activeAppointment.id}`)}
+                        className="rounded-xl border border-rose-300/45 bg-rose-500/20 px-3.5 py-2 text-xs font-bold text-rose-100 transition hover:bg-rose-500/35"
+                      >
+                        Cancel appointment
+                      </button>
+                    </>
+                  )
+                ) : (
+                  <p className="text-xs font-medium text-amber-200/95">
+                    Cancellation locked: {activeCancelState.reason}
+                  </p>
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
@@ -199,7 +404,7 @@ export default function MyQueuePage() {
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               {state.appointments.length}{" "}
-              {state.appointments.length === 1 ? "recorded visit" : "recorded visits"}
+              {state.appointments.length === 1 ? "recorded visit" : "recorded visits"} · Cancel upcoming visits anytime until 20 mins before schedule
             </p>
           </div>
 
@@ -230,33 +435,91 @@ export default function MyQueuePage() {
                   ? "border-rose-200/80 border-l-rose-400 bg-gradient-to-r from-rose-50/40 to-white"
                   : "border-teal-200/80 border-l-teal-600 bg-gradient-to-r from-teal-50/45 to-white";
 
+            const isCurrentServingApt =
+              patientQueueStatus === "Serving" &&
+              (apt.appointmentId === patientAppointmentId ||
+                apt.queueNumber === patientQueueCode);
+            const cancelState = getCancellationState(
+              apt,
+              nowMs,
+              isCurrentServingApt ? "Serving" : null,
+            );
+            const isConfirmingRow = confirmingId === `row-${apt.id}`;
+
             return (
               <div
                 key={apt.id}
-                className={`flex flex-col justify-between gap-3 rounded-2xl border border-l-4 p-4 shadow-2xs sm:flex-row sm:items-center sm:p-5 ${cardAccent}`}
+                className={`rounded-2xl border border-l-4 p-4 shadow-2xs sm:p-5 ${cardAccent}`}
               >
-                <div className="min-w-0">
-                  <p className="font-bold text-[#062b26]">{apt.serviceName}</p>
-                  <p className="mt-1 text-xs text-slate-600 sm:text-sm">
-                    {apt.doctorName} · {apt.date} at {apt.time} · Queue {apt.queueNumber}
-                  </p>
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                  <div className="min-w-0">
+                    <p className="font-bold text-[#062b26]">{apt.serviceName}</p>
+                    <p className="mt-1 text-xs text-slate-600 sm:text-sm">
+                      {apt.doctorName} · {apt.date} at {apt.time} · Queue {apt.queueNumber}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-bold ${
+                        apt.status === "Completed"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : apt.status === "Cancelled"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-teal-100 text-teal-800"
+                      }`}
+                    >
+                      {apt.status}
+                    </span>
+                    <span className="font-bold text-[#062b26]">
+                      ₱{Number(apt.fee || 0).toLocaleString()}
+                    </span>
+
+                    {cancelState.canCancel && !isConfirmingRow && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(`row-${apt.id}`)}
+                        className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:border-rose-400 hover:bg-rose-100"
+                      >
+                        Cancel
+                      </button>
+                    )}
+
+                    {cancelState.locked && (
+                      <span
+                        title={cancelState.reason}
+                        className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900"
+                      >
+                        {cancelState.reason}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      apt.status === "Completed"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : apt.status === "Cancelled"
-                          ? "bg-rose-100 text-rose-700"
-                          : "bg-teal-100 text-teal-800"
-                    }`}
-                  >
-                    {apt.status}
-                  </span>
-                  <span className="font-bold text-[#062b26]">
-                    ₱{Number(apt.fee || 0).toLocaleString()}
-                  </span>
-                </div>
+
+                {isConfirmingRow && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-rose-200/70 pt-3">
+                    <p className="text-xs font-semibold text-rose-800">
+                      Are you sure you want to cancel this appointment?
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(null)}
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Keep
+                      </button>
+                      <button
+                        type="button"
+                        disabled={cancellingId === apt.id}
+                        onClick={() => handleConfirmCancel(apt)}
+                        className="rounded-lg bg-rose-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-60"
+                      >
+                        {cancellingId === apt.id ? "Cancelling…" : "Confirm cancel"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

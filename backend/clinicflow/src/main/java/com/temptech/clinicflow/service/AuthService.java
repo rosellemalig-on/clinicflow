@@ -115,18 +115,6 @@ public class AuthService {
                 .orElseThrow(() -> new NotFoundException("Staff account not found: " + staffId));
         User user = staff.getUser();
 
-        if (!active) {
-            if (actingUserId != null && actingUserId.equals(user.getUserId())) {
-                throw new IllegalArgumentException("You cannot deactivate your own active session.");
-            }
-            long activeStaffCount = staffRepository.findAll().stream()
-                    .filter(s -> s.getUser() != null && s.getUser().isActive())
-                    .count();
-            if (user.isActive() && activeStaffCount <= 1) {
-                throw new IllegalArgumentException("At least one active staff account must remain enabled.");
-            }
-        }
-
         user.setActive(active);
         userRepository.save(user);
         return toStaffDto(staff);

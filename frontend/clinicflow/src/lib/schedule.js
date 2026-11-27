@@ -59,6 +59,11 @@ export function getTodayIso() {
   return toIsoDate(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
+export function isPastIsoDate(iso) {
+  if (!iso) return false;
+  return String(iso) < getTodayIso();
+}
+
 export function createDefaultSchedule() {
   return {
     mode: "calendar",
@@ -139,5 +144,5 @@ export function isScheduleValid(selection) {
   if (selection.mode === "weekly") {
     return selection.weekdays.length > 0;
   }
-  return selection.dates.length > 0;
+  return selection.dates.length > 0 && selection.dates.every((iso) => !isPastIsoDate(iso));
 }

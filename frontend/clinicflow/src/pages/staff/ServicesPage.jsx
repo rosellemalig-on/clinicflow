@@ -45,6 +45,7 @@ export default function ServicesPage() {
   const [schedule, setSchedule] = useState(() => createDefaultSchedule());
   const [editingDocId, setEditingDocId] = useState(null);
   const [editSchedule, setEditSchedule] = useState(() => createDefaultSchedule());
+  const [doctorError, setDoctorError] = useState("");
 
   const activeServicesCount = state.services.filter((s) => s.active).length;
   const availableDoctorsCount = state.doctors.filter((d) => d.available).length;
@@ -58,18 +59,25 @@ export default function ServicesPage() {
 
   const handleAddDoctor = async (e) => {
     e.preventDefault();
+    setDoctorError("");
     if (!doctorName.trim() || !specialty.trim() || !isScheduleValid(schedule)) return;
-    await addDoctor({
-      name: doctorName,
-      specialty,
-      schedule: formatDoctorSchedule(schedule),
-    });
-    setDoctorName("");
-    setSpecialty("");
-    setSchedule(createDefaultSchedule());
+    try {
+      await addDoctor({
+        name: doctorName,
+        specialty,
+        schedule: formatDoctorSchedule(schedule),
+        scheduleDates: schedule.mode === "calendar" ? schedule.dates : [],
+      });
+      setDoctorName("");
+      setSpecialty("");
+      setSchedule(createDefaultSchedule());
+    } catch (err) {
+      setDoctorError(err.message || "Unable to add doctor schedule.");
+    }
   };
 
   const handleStartEditSchedule = (docId) => {
+    setDoctorError("");
     if (editingDocId === docId) {
       setEditingDocId(null);
       return;
@@ -79,9 +87,17 @@ export default function ServicesPage() {
   };
 
   const handleSaveEditSchedule = async (docId) => {
+    setDoctorError("");
     if (!isScheduleValid(editSchedule)) return;
-    await updateDoctor(docId, { schedule: formatDoctorSchedule(editSchedule) });
-    setEditingDocId(null);
+    try {
+      await updateDoctor(docId, {
+        schedule: formatDoctorSchedule(editSchedule),
+        scheduleDates: editSchedule.mode === "calendar" ? editSchedule.dates : [],
+      });
+      setEditingDocId(null);
+    } catch (err) {
+      setDoctorError(err.message || "Unable to update doctor schedule.");
+    }
   };
 
   const showServices = activeTab === "all" || activeTab === "services";
@@ -327,6 +343,11 @@ export default function ServicesPage() {
 
           <div className="rounded-2xl border border-teal-200/75 bg-white p-5 shadow-2xs sm:p-6">
             <h3 className="text-sm font-bold text-[#062b26]">Add doctor</h3>
+            {doctorError && (
+              <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-semibold text-rose-700">
+                {doctorError}
+              </div>
+            )}
             <form onSubmit={handleAddDoctor} className="mt-3.5 space-y-4">
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="block min-w-0">

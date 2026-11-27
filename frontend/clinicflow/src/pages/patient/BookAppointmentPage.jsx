@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getSlotsForDate, useClinicFlowStore } from '../../data/clinicFlowStore';
+import { getTodayIso, isPastIsoDate } from '@/lib/schedule';
 
 function SelectDropdown({ label, placeholder, options, selectedValue, onSelect, helperText }) {
   const [open, setOpen] = useState(false);
@@ -128,9 +129,10 @@ export default function BookAppointmentPage() {
   const activeServices = state.services.filter((s) => s.active);
   const availableDoctors = state.doctors.filter((d) => d.available);
 
+  const todayIso = getTodayIso();
   const [serviceId, setServiceId] = useState(activeServices[0]?.id || '');
   const [doctorName, setDoctorName] = useState(availableDoctors[0]?.name || '');
-  const [date, setDate] = useState('2026-11-26');
+  const [date, setDate] = useState(todayIso);
   const [selectedSlotId, setSelectedSlotId] = useState('');
   const [alertState, setAlertState] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -173,6 +175,13 @@ export default function BookAppointmentPage() {
     }
     if (!effectiveDoctorName) {
       setAlertState({ type: 'error', text: 'No doctors are currently available.' });
+      return;
+    }
+    if (isPastIsoDate(date)) {
+      setAlertState({
+        type: 'error',
+        text: 'Appointments cannot be booked on dates that have already passed. Please pick today or a future date.',
+      });
       return;
     }
     if (!selectedSlotId) {
@@ -327,9 +336,20 @@ export default function BookAppointmentPage() {
             </label>
             <input
               type="date"
+              min={todayIso}
               value={date}
               onChange={(e) => {
-                setDate(e.target.value);
+                const nextDate = e.target.value;
+                if (isPastIsoDate(nextDate)) {
+                  setDate(todayIso);
+                  setSelectedSlotId('');
+                  setAlertState({
+                    type: 'error',
+                    text: 'Past dates cannot be booked. Date reset to today.',
+                  });
+                  return;
+                }
+                setDate(nextDate);
                 setSelectedSlotId('');
                 setAlertState(null);
               }}

@@ -43,13 +43,15 @@ export default function StaffAccountsPage() {
     }
   };
 
-  const handleToggle = async (account) => {
+  const handleToggle = async (account, isSelf = false) => {
     setStatusMessage(null);
     try {
       await toggleStaffAccountStatus(account.staffId, !account.active);
       setStatusMessage({
         type: "success",
-        text: `${account.name} has been ${account.active ? "deactivated" : "reactivated"}.`,
+        text: isSelf && account.active
+          ? "Your staff account has been deactivated. You can reactivate it here before signing out."
+          : `${account.name} has been ${account.active ? "deactivated" : "reactivated"}.`,
       });
     } catch (err) {
       setStatusMessage({
@@ -200,8 +202,8 @@ export default function StaffAccountsPage() {
               <th>Staff ID</th>
               <th>Name</th>
               <th>Contact</th>
-              <th>Status</th>
-              <th>Action</th>
+              <th className="text-center">Status</th>
+              <th className="text-center">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -226,9 +228,9 @@ export default function StaffAccountsPage() {
                       {account.contactNumber || "—"}
                     </div>
                   </td>
-                  <td>
+                  <td className="text-center">
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                      className={`inline-flex min-w-[82px] items-center justify-center rounded-full px-3 py-1 text-xs font-bold ${
                         account.active
                           ? "bg-emerald-100 text-emerald-800"
                           : "bg-rose-100 text-rose-700"
@@ -237,13 +239,14 @@ export default function StaffAccountsPage() {
                       {account.active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td>
+                  <td className="text-center">
                     <button
                       type="button"
-                      disabled={isSelf}
-                      onClick={() => handleToggle(account)}
-                      className={`table-action ${
-                        isSelf ? "cursor-not-allowed opacity-45" : ""
+                      onClick={() => handleToggle(account, isSelf)}
+                      className={`inline-flex min-w-[96px] items-center justify-center rounded-lg border px-3 py-2 text-xs font-bold transition ${
+                        account.active
+                          ? "border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-400 hover:bg-rose-100"
+                          : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400 hover:bg-emerald-100"
                       }`}
                     >
                       {account.active ? "Deactivate" : "Reactivate"}

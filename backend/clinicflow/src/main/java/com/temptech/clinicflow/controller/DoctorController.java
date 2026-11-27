@@ -1,5 +1,8 @@
 package com.temptech.clinicflow.controller;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +70,24 @@ public class DoctorController {
         }
         if (body.containsKey("department") && body.get("department") != null) {
             target.setDepartment(String.valueOf(body.get("department")).trim());
+        }
+        if (body.containsKey("scheduleDates") && body.get("scheduleDates") instanceof Collection<?> dates) {
+            LocalDate today = LocalDate.now();
+            for (Object raw : dates) {
+                if (raw == null) continue;
+                String iso = String.valueOf(raw).trim();
+                if (iso.isEmpty()) continue;
+                try {
+                    LocalDate parsed = LocalDate.parse(iso);
+                    if (parsed.isBefore(today)) {
+                        throw new IllegalArgumentException(
+                                "Doctor schedule cannot include past dates. Please choose today or future dates only."
+                        );
+                    }
+                } catch (DateTimeParseException ex) {
+                    throw new IllegalArgumentException("Invalid schedule date: " + iso);
+                }
+            }
         }
         if (body.containsKey("schedule") && body.get("schedule") != null) {
             target.setSchedule(String.valueOf(body.get("schedule")).trim());

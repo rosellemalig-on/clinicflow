@@ -22,6 +22,10 @@ const ENTRY_STYLES = {
     badge: "bg-rose-100 text-rose-800",
     card: "border-rose-200/80 border-l-rose-500 bg-gradient-to-r from-rose-50/50 to-white",
   },
+  Cancelled: {
+    badge: "bg-rose-100 text-rose-800",
+    card: "border-rose-200/80 border-l-rose-400 bg-gradient-to-r from-rose-50/40 to-white",
+  },
   Completed: {
     badge: "bg-teal-100 text-teal-800",
     card: "border-slate-200/80 border-l-teal-500 bg-gradient-to-r from-slate-50/70 to-white",
@@ -139,7 +143,9 @@ export default function QueueManagementPage() {
                     {entry.status}
                   </span>
 
-                  {entry.status !== "Serving" && entry.status !== "Completed" && (
+                  {entry.status !== "Serving" &&
+                    entry.status !== "Completed" &&
+                    entry.status !== "Cancelled" && (
                     <button
                       type="button"
                       onClick={() => queueAction("RECALL", entry.id)}

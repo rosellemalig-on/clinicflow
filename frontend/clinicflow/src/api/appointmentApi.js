@@ -13,3 +13,5 @@ export const getSlotsByDate = (date) => api.get(`/slots?date=${encodeURIComponen
 export const bookAppointment = (payload) => api.post("/appointments", payload);
 export const updateAppointmentStatus = (appointmentId, status) =>
   api.patch(`/appointments/${appointmentId}/status`, { status });
+export const cancelAppointment = (appointmentId, patientId) =>
+  api.patch(`/appointments/${appointmentId}/cancel`, patientId != null ? { patientId } : {});

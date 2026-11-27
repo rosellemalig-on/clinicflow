@@ -4,6 +4,7 @@ import {
   formatDoctorSchedule,
   formatIsoShort,
   getTodayIso,
+  isPastIsoDate,
   isScheduleValid,
   MONTH_NAMES,
   TIME_OPTIONS,
@@ -43,6 +44,12 @@ export function SchedulePicker({
   const [open, setOpen] = useState(!collapsible || defaultOpen);
 
   const todayIso = useMemo(() => getTodayIso(), []);
+  const [todayYear, todayMonth] = useMemo(() => {
+    const [y, m] = todayIso.split("-").map(Number);
+    return [y, m - 1];
+  }, [todayIso]);
+  const isAtCurrentOrPastMonth =
+    viewYear < todayYear || (viewYear === todayYear && viewMonth <= todayMonth);
   const formattedPreview = useMemo(() => formatDoctorSchedule(value), [value]);
 
   const calendarCells = useMemo(() => {
@@ -63,6 +70,7 @@ export function SchedulePicker({
   }, [viewYear, viewMonth]);
 
   const goPrevMonth = () => {
+    if (isAtCurrentOrPastMonth) return;
     if (viewMonth === 0) {
       setViewYear((y) => y - 1);
       setViewMonth(11);
@@ -81,6 +89,12 @@ export function SchedulePicker({
   };
 
   const toggleDate = (iso) => {
+    if (isPastIsoDate(iso)) {
+      if (value.dates.includes(iso)) {
+        onChange({ ...value, mode: "calendar", dates: value.dates.filter((d) => d !== iso) });
+      }
+      return;
+    }
     const exists = value.dates.includes(iso);
     const nextDates = exists
       ? value.dates.filter((d) => d !== iso)
@@ -212,9 +226,14 @@ export function SchedulePicker({
                 <div className="mb-2 flex items-center justify-between">
                   <button
                     type="button"
+                    disabled={isAtCurrentOrPastMonth}
                     onClick={goPrevMonth}
                     aria-label="Previous month"
-                    className="grid size-7 place-items-center rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-teal-600 hover:text-teal-800"
+                    className={`grid size-7 place-items-center rounded-lg border text-sm font-bold transition ${
+                      isAtCurrentOrPastMonth
+                        ? "cursor-not-allowed border-slate-100 text-slate-300"
+                        : "border-slate-200 text-slate-600 hover:border-teal-600 hover:text-teal-800"
+                    }`}
                   >
                     ‹
                   </button>
@@ -244,19 +263,24 @@ export function SchedulePicker({
                     if (!cell) {
                       return <div key={`empty-${idx}`} className="h-8" />;
                     }
-                    const isSelected = value.dates.includes(cell.iso);
+                    const isPast = cell.iso < todayIso;
+                    const isSelected = !isPast && value.dates.includes(cell.iso);
                     const isToday = cell.iso === todayIso;
                     return (
                       <button
                         key={cell.iso}
                         type="button"
+                        disabled={isPast}
+                        title={isPast ? "Past dates cannot be scheduled" : undefined}
                         onClick={() => toggleDate(cell.iso)}
                         className={`h-8 rounded-lg text-xs font-semibold transition ${
-                          isSelected
-                            ? "bg-teal-700 text-white shadow-2xs"
-                            : isToday
-                              ? "border border-teal-400 bg-teal-50/70 text-teal-900 hover:bg-teal-100"
-                              : "text-slate-700 hover:bg-slate-100"
+                          isPast
+                            ? "cursor-not-allowed bg-slate-50 text-slate-300 line-through"
+                            : isSelected
+                              ? "bg-teal-700 text-white shadow-2xs"
+                              : isToday
+                                ? "border border-teal-400 bg-teal-50/70 text-teal-900 hover:bg-teal-100"
+                                : "text-slate-700 hover:bg-slate-100"
                         }`}
                       >
                         {cell.day}
@@ -264,6 +288,10 @@ export function SchedulePicker({
                     );
                   })}
                 </div>
+
+                <p className="mt-2.5 text-[11px] font-medium text-slate-400">
+                  Only today and future dates can be selected.
+                </p>
 
                 {value.dates.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-2.5">

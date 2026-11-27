@@ -44,4 +44,19 @@ public class AppointmentController {
         }
         return appointmentService.updateStatus(id, status.trim());
     }
+
+    @PatchMapping("/{id}/cancel")
+    public Map<String, Object> cancelByPatient(
+            @PathVariable Integer id,
+            @RequestBody(required = false) Map<String, Object> body
+    ) {
+        Integer patientId = null;
+        if (body != null && body.get("patientId") != null) {
+            String digits = String.valueOf(body.get("patientId")).replaceAll("[^0-9]", "");
+            if (!digits.isEmpty()) {
+                patientId = Integer.parseInt(digits);
+            }
+        }
+        return appointmentService.cancelByPatient(id, patientId);
+    }
 }

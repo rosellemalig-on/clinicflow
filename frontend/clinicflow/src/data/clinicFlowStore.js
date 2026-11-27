@@ -54,6 +54,8 @@ const INITIAL_STATE = {
     hasActiveTicket: false,
     patientServiceName: null,
     patientDoctorName: null,
+    patientAppointmentId: null,
+    patientScheduledAt: null,
     totalInQueue: 0,
     avgMinutesPerPatient: 5,
     entries: [],
@@ -228,6 +230,8 @@ export async function refreshClinicFlowStore(dateOverride, { silent = false } = 
             hasActiveTicket: Boolean(queueRes.value.hasActiveTicket),
             patientServiceName: queueRes.value.patientServiceName ?? null,
             patientDoctorName: queueRes.value.patientDoctorName ?? null,
+            patientAppointmentId: queueRes.value.patientAppointmentId ?? null,
+            patientScheduledAt: queueRes.value.patientScheduledAt ?? null,
             totalInQueue: queueRes.value.totalInQueue ?? 0,
             avgMinutesPerPatient: queueRes.value.avgMinutesPerPatient ?? 5,
             entries: Array.isArray(queueRes.value.entries) ? queueRes.value.entries : [],
@@ -402,6 +406,17 @@ export function useClinicFlowStore() {
     await refreshClinicFlowStore();
   }, []);
 
+  const cancelAppointment = useCallback(async (appointmentId) => {
+    const session = getActiveSession();
+    const numericId = resolveNumericId(currentState.appointments, appointmentId, 'appointmentId');
+    if (!numericId) {
+      throw new Error('Unable to identify the appointment to cancel.');
+    }
+    const cancelled = await appointmentApi.cancelAppointment(numericId, getScopedPatientId(session));
+    await refreshClinicFlowStore();
+    return cancelled;
+  }, []);
+
   const confirmPayment = useCallback(
     async (appointmentId, paymentMethod, referenceNumber = '', confirmedBy = 'patient') => {
       const numericId = resolveNumericId(currentState.appointments, appointmentId, 'appointmentId');
@@ -453,6 +468,7 @@ export function useClinicFlowStore() {
       specialty: doc.specialty.trim(),
       department: doc.department?.trim() || doc.specialty.trim(),
       schedule: doc.schedule?.trim() || 'Mon–Fri, 9:00 AM – 5:00 PM',
+      scheduleDates: Array.isArray(doc.scheduleDates) ? doc.scheduleDates : [],
       available: true,
     });
     await refreshClinicFlowStore();
@@ -506,6 +522,7 @@ export function useClinicFlowStore() {
     updatePatientProfile,
     bookAppointment,
     updateAppointmentStatus,
+    cancelAppointment,
     confirmPayment,
     markNotificationRead,
     markAllNotificationsRead,

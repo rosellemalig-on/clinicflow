@@ -125,6 +125,12 @@ public class AppointmentService {
         TimeSlot slot = timeSlotRepository.findById(slotId)
                 .orElseThrow(() -> new NotFoundException("Time slot not found: " + slotId));
 
+        if (slot.getSlotDate() != null && slot.getSlotDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException(
+                    "Appointments cannot be booked on dates that have already passed."
+            );
+        }
+
         if (slot.getBookedCount() >= slot.getCapacity()) {
             throw new SlotFullException("This time slot is already full. Please choose another available slot.");
         }
@@ -208,9 +214,87 @@ public class AppointmentService {
     public Map<String, Object> updateStatus(Integer appointmentId, String status) {
         Appointment apt = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Appointment not found: " + appointmentId));
+        boolean wasCancelled = "Cancelled".equalsIgnoreCase(apt.getStatus());
         apt.setStatus(status);
         apt = appointmentRepository.save(apt);
+
+        if ("Cancelled".equalsIgnoreCase(status) && !wasCancelled) {
+            releaseSlotAndCancelQueue(apt);
+        }
+
         return toAppointmentDto(apt);
+    }
+
+    @Transactional
+    public Map<String, Object> cancelByPatient(Integer appointmentId, Integer patientId) {
+        Appointment apt = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new NotFoundException("Appointment not found: " + appointmentId));
+
+        if (patientId != null && apt.getPatient() != null
+                && !patientId.equals(apt.getPatient().getPatientId())) {
+            throw new IllegalArgumentException("You can only cancel your own appointments.");
+        }
+
+        if ("Cancelled".equalsIgnoreCase(apt.getStatus())) {
+            throw new IllegalArgumentException("This appointment is already cancelled.");
+        }
+
+        if ("Completed".equalsIgnoreCase(apt.getStatus())) {
+            throw new IllegalArgumentException("Completed appointments cannot be cancelled.");
+        }
+
+        QueueEntry entry = queueEntryRepository.findByAppointment_AppointmentId(apt.getAppointmentId()).orElse(null);
+        if (entry != null && ("Serving".equalsIgnoreCase(entry.getStatus())
+                || "Completed".equalsIgnoreCase(entry.getStatus()))) {
+            throw new IllegalArgumentException("Appointments already being served or completed cannot be cancelled.");
+        }
+
+        TimeSlot slot = apt.getSlot();
+        if (slot != null && slot.getSlotDate() != null && slot.getStartTime() != null) {
+            LocalDateTime scheduledAt = LocalDateTime.of(slot.getSlotDate(), slot.getStartTime());
+            LocalDateTime cutoff = scheduledAt.minusMinutes(20);
+            if (!LocalDateTime.now().isBefore(cutoff)) {
+                throw new IllegalArgumentException(
+                        "Appointments cannot be cancelled within 20 minutes of the scheduled time."
+                );
+            }
+        }
+
+        apt.setStatus("Cancelled");
+        apt = appointmentRepository.save(apt);
+        releaseSlotAndCancelQueue(apt);
+
+        ClinicService svc = apt.getResolvedService();
+        String serviceName = svc != null ? svc.getServiceName() : "Appointment";
+        String dateLabel = slot != null && slot.getSlotDate() != null ? slot.getSlotDate().toString() : "";
+        String timeLabel = slot != null && slot.getStartTime() != null ? slot.getStartTime().format(TIME_FMT) : "";
+        notificationService.createNotification(
+                apt.getPatient(),
+                apt,
+                "update",
+                "Appointment cancelled",
+                serviceName + (dateLabel.isEmpty() ? "" : " on " + dateLabel)
+                        + (timeLabel.isEmpty() ? "" : " at " + timeLabel)
+                        + " has been cancelled."
+        );
+
+        return toAppointmentDto(apt);
+    }
+
+    private void releaseSlotAndCancelQueue(Appointment apt) {
+        TimeSlot slot = apt.getSlot();
+        if (slot != null && slot.getBookedCount() > 0) {
+            slot.setBookedCount(slot.getBookedCount() - 1);
+            slot.setStatus(slot.getBookedCount() >= slot.getCapacity() ? "Full" : "Available");
+            timeSlotRepository.save(slot);
+        }
+
+        queueEntryRepository.findByAppointment_AppointmentId(apt.getAppointmentId()).ifPresent(entry -> {
+            if (!"Completed".equalsIgnoreCase(entry.getStatus())) {
+                entry.setStatus("Cancelled");
+                queueEntryRepository.save(entry);
+            }
+        });
     }
 
     public Map<String, Object> toSlotDto(TimeSlot slot) {
@@ -242,6 +326,10 @@ public class AppointmentService {
         map.put("doctorName", doc != null ? doc.getDoctorName() : "");
         map.put("date", slot != null && slot.getSlotDate() != null ? slot.getSlotDate().toString() : "");
         map.put("time", slot != null && slot.getStartTime() != null ? slot.getStartTime().format(TIME_FMT) : "");
+        map.put("scheduledAt",
+                slot != null && slot.getSlotDate() != null && slot.getStartTime() != null
+                        ? LocalDateTime.of(slot.getSlotDate(), slot.getStartTime()).toString()
+                        : "");
         map.put("fee", svc != null && svc.getFee() != null ? svc.getFee().doubleValue() : 0);
         map.put("queueNumber", entry != null ? entry.getQueueNumber() : "—");
         map.put("status", apt.getStatus() != null ? apt.getStatus() : "Confirmed");

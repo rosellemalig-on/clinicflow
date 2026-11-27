@@ -1,6 +1,7 @@
 package com.temptech.clinicflow.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,8 @@ public class QueueService {
         String patientQueueStatus = patientEntry != null ? patientEntry.getStatus() : null;
         boolean hasActiveTicket = patientEntry != null
                 && !"Completed".equalsIgnoreCase(patientQueueStatus)
-                && !"Skipped".equalsIgnoreCase(patientQueueStatus);
+                && !"Skipped".equalsIgnoreCase(patientQueueStatus)
+                && !"Cancelled".equalsIgnoreCase(patientQueueStatus);
         String patientServiceName = patientEntry != null
                 && patientEntry.getAppointment().getResolvedService() != null
                 ? patientEntry.getAppointment().getResolvedService().getServiceName()
@@ -88,6 +90,19 @@ public class QueueService {
                 && patientEntry.getAppointment().getResolvedDoctor() != null
                 ? patientEntry.getAppointment().getResolvedDoctor().getDoctorName()
                 : null;
+        Integer patientAppointmentId = patientEntry != null && patientEntry.getAppointment() != null
+                ? patientEntry.getAppointment().getAppointmentId()
+                : null;
+        String patientScheduledAt = null;
+        if (patientEntry != null && patientEntry.getAppointment() != null
+                && patientEntry.getAppointment().getSlot() != null
+                && patientEntry.getAppointment().getSlot().getSlotDate() != null
+                && patientEntry.getAppointment().getSlot().getStartTime() != null) {
+            patientScheduledAt = LocalDateTime.of(
+                    patientEntry.getAppointment().getSlot().getSlotDate(),
+                    patientEntry.getAppointment().getSlot().getStartTime()
+            ).toString();
+        }
 
         List<Map<String, Object>> entryDtos = entries.stream().map(e -> {
             Appointment apt = e.getAppointment();
@@ -110,6 +125,8 @@ public class QueueService {
         result.put("hasActiveTicket", hasActiveTicket);
         result.put("patientServiceName", patientServiceName);
         result.put("patientDoctorName", patientDoctorName);
+        result.put("patientAppointmentId", patientAppointmentId);
+        result.put("patientScheduledAt", patientScheduledAt);
         result.put("totalInQueue", entries.size());
         result.put("avgMinutesPerPatient", 5);
         result.put("entries", entryDtos);
